@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 # Created by Pearu Peterson, August 2002
-# FFTLog added by Dieter Werthmüller, November 2016
 from __future__ import division, print_function, absolute_import
 
 
@@ -20,23 +19,20 @@ def configuration(parent_package='', top_path=None):
     fftpack_src = [join('src/fftpack', '*.f')]
     config.add_library('fftpack', sources=fftpack_src)
 
+    fftlog_src = [join('src/fftlog', '*')]
+    config.add_library('fftlog', sources=fftlog_src)
+
     sources = ['fftpack.pyf', 'src/zfft.c', 'src/drfft.c', 'src/zrfft.c',
                'src/zfftnd.c', 'src/dct.c.src', 'src/dst.c.src']
 
     config.add_extension('_fftpack',
                          sources=sources,
-                         libraries=['dfftpack', 'fftpack'],
+                         libraries=['dfftpack', 'fftpack', 'fftlog'],
                          include_dirs=['src'],
-                         depends=(dfftpack_src + fftpack_src))
+                         depends=(dfftpack_src + fftpack_src + fftlog_src))
 
     config.add_extension('convolve',
                          sources=['convolve.pyf', 'src/convolve.c'],
-                         libraries=['dfftpack'],
-                         depends=dfftpack_src)
-
-    config.add_extension('fftlog',
-                         sources=['fftlog.pyf', 'src/fftlog/cdgamma.f',
-                                  'src/fftlog/fftlog.f'],
                          libraries=['dfftpack'],
                          depends=dfftpack_src)
 

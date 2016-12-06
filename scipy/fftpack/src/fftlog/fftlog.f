@@ -10,7 +10,10 @@ c Permission to distribute this modified fftlog.f under the BSD-3-Clause
 c license has been granted (email from Andrew Hamilton to Dieter
 c Werthmüller dated 07 October 2016).
 c
-c Modifications: drfft* -> dfft*
+c Modifications (all marked with comments: %DW):
+c   - drfft* -> dfft*
+c   - kr: remove verbose and interactive options (kropt={0,1})
+c         => therefore remove as well function stblnk(string)
 c
 c---Start of revision history-------------------------------------------
 c
@@ -57,9 +60,9 @@ c
 c Andrew J S Hamilton March 1999
 c email: Andrew.Hamilton@Colorado.EDU
 c
-c Refs:	Talman J. D., 1978, J. Comp. Phys., 29, 35
-c	Hamilton A. J. S., 2000, MNRAS, 312, 257
-c	( http://xxx.lanl.gov/abs/astro-ph/9905191 )
+c Refs: Talman J. D., 1978, J. Comp. Phys., 29, 35
+c   Hamilton A. J. S., 2000, MNRAS, 312, 257
+c   ( http://xxx.lanl.gov/abs/astro-ph/9905191 )
 c
 c FFTLog uses the NCAR suite of FFT routines,
 c and a modified version of the complex Gamma function
@@ -238,9 +241,10 @@ c
 c=======================================================================
 c THE FFTLog CODE
 c=======================================================================
-      subroutine fhti(n,mu,q,dlnr,kr,kropt,wsave,ok)
+c     subroutine fhti(n,mu,q,dlnr,kr,kropt,wsave,ok)  %DW remove ok
+      subroutine fhti(n,mu,q,dlnr,kr,kropt,wsave)
       integer n,kropt
-      logical ok
+c     logical ok  %DW remove ok
       real*8 mu,q,dlnr,kr,wsave(*)
 c
 c fhti initializes the working array wsave
@@ -260,21 +264,21 @@ c
 c  Input: n = number of points in the array to be transformed;
 c             n may be any positive integer, but the NCAR FFT routines
 c             run fastest if n is a product of small primes 2, 3, 5.
-c	  mu = index of J_mu in Hankel transform;
-c	       mu may be any real number, positive or negative.
-c	  q = exponent of power law bias;
-c	      q may be any real number, positive or negative.
+c     mu = index of J_mu in Hankel transform;
+c          mu may be any real number, positive or negative.
+c     q = exponent of power law bias;
+c         q may be any real number, positive or negative.
 c             If in doubt, use q = 0, for which case the Hankel
 c             transform is orthogonal, i.e. self-inverse,
 c             provided also that, for n even, kr is low-ringing.
 c             Non-zero q may yield better approximations to the
 c             continuous Hankel transform for some functions.
 c         dlnr = separation between natural log of points;
-c		 dlnr may be positive or negative.
-c	  kr = k_c r_c where c is central point of array
+c        dlnr may be positive or negative.
+c     kr = k_c r_c where c is central point of array
 c              = k_j r_(n+1-j) = k_(n+1-j) r_j .
-c	       Normally one would choose kr to be about 1
-c	       (or 2, or pi, to taste).
+c          Normally one would choose kr to be about 1
+c          (or 2, or pi, to taste).
 c         kropt = 0 to use input kr as is;
 c                 1 to change kr to nearest low-ringing kr, quietly;
 c                 2 to change kr to nearest low-ringing kr, verbosely;
@@ -302,57 +306,62 @@ c        parameters
       real*8 ROUND
       parameter (ROUND=1.d-15)
 c        externals
-      integer lnblnk,stblnk
+c      integer lnblnk,stblnk  %DW removed, unused
       real*8 krgood
       complex*16 cdgamma
 c        local (automatic) variables
-      character*1 go
-      character*64 temp
+c      character*1 go  %DW removed, unused
+c      character*64 temp  %DW removed, unused
       integer l,m
       real*8 amp,arg,d,ln2,ln2kr,xm,xp,y
       complex*16 zm,zp
 c
-c--------adjust kr
-c        keep kr as is
-      if (kropt.eq.0) then
-        continue
+c-----%DW New kr-routine, only kropt={0,1}
 c        change kr to low-ringing kr quietly
-      elseif (kropt.eq.1) then
+      if (kropt.eq.1) then
         kr=krgood(mu,q,dlnr,kr)
-c        change kr to low-ringing kr verbosely
-      elseif (kropt.eq.2) then
-        d=krgood(mu,q,dlnr,kr)
-        if (abs(kr/d-ONE).gt.ROUND) then
-          kr=d
-          write (*,'(" kr changed to",g24.16)') kr
-        endif
-c        option to change kr to low-ringing kr interactively
-      else
-        d=krgood(mu,q,dlnr,kr)
-        if (abs(kr/d-ONE).gt.ROUND) then
-c        fortran demonstrates its inferiority to C
-          write (*,'(" change kr = ",$)')
-          write (temp,*) kr
-          write (*,'(a,$)') temp(stblnk(temp):lnblnk(temp))
-          write (*,'(" to low-ringing kr = ",$)')
-          write (temp,*) d
-          write (*,'(a,$)') temp(stblnk(temp):lnblnk(temp))
-          write (*,'("? [CR,y=yes, n=no, x=exit]: ",$)')
-          read (*,'(a1)') go
-          if (go.eq.' '.or.go.eq.'y'.or.go.eq.'Y') then
-            kr=d
-            write (*,'(" kr changed to",g24.16)') kr
-          elseif (go.eq.'n'.or.go.eq.'N') then
-            print *,'kr left unchanged at',kr
-          else
-            print *,'exit'
-            goto 300
-          endif
-        endif
       endif
+c--------adjust kr  %DW commented out; original version
+cc        keep kr as is
+c      if (kropt.eq.0) then
+c        continue
+cc        change kr to low-ringing kr quietly
+c      elseif (kropt.eq.1) then
+c        kr=krgood(mu,q,dlnr,kr)
+cc        change kr to low-ringing kr verbosely
+c      elseif (kropt.eq.2) then
+c        d=krgood(mu,q,dlnr,kr)
+c        if (abs(kr/d-ONE).gt.ROUND) then
+c          kr=d
+c          write (*,'(" kr changed to",g24.16)') kr
+c        endif
+cc        option to change kr to low-ringing kr interactively
+c      else
+c        d=krgood(mu,q,dlnr,kr)
+c        if (abs(kr/d-ONE).gt.ROUND) then
+cc        fortran demonstrates its inferiority to C
+c          write (*,'(" change kr = ",$)')
+c          write (temp,*) kr
+c          write (*,'(a,$)') temp(stblnk(temp):lnblnk(temp))
+c          write (*,'(" to low-ringing kr = ",$)')
+c          write (temp,*) d
+c          write (*,'(a,$)') temp(stblnk(temp):lnblnk(temp))
+c          write (*,'("? [CR,y=yes, n=no, x=exit]: ",$)')
+c          read (*,'(a1)') go
+c          if (go.eq.' '.or.go.eq.'y'.or.go.eq.'Y') then
+c            kr=d
+c            write (*,'(" kr changed to",g24.16)') kr
+c          elseif (go.eq.'n'.or.go.eq.'N') then
+c            print *,'kr left unchanged at',kr
+c          else
+c            print *,'exit'
+c            goto 300
+c          endif
+c        endif
+c      endif
 c--------return if n is <= 0
       if (n.le.0) goto 200
-c--------initialize normal FFT
+c--------initialize normal FFT  %DW Change drffti->dffti
       call dffti(n,wsave)
 c        drfft uses first 2*n+15 elements of wsave
       l=2*n+15
@@ -469,12 +478,13 @@ c [i.e. wsave(l+3*m+1)=sin(arg) for m=n/2] is not used within FFTLog;
 c if a low-ringing kr is used, this element should be zero.
 c The last element is computed in case somebody wants it.
       endif
-  200 ok=.true.
+c  200 ok=.true.   %DW remove ok
+  200 continue
       return
 c
 c--------error returns
-  300 ok=.false.
-      return
+c  300 ok=.false.  %DW remove ok
+c      return      %DW remove ok
       end
 c
 c=======================================================================
@@ -526,13 +536,13 @@ c              rk is used only to multiply the output array by
 c              sqrt(rk)^dir, so if you want to do the normalization
 c              later, or you don't care about the normalization,
 c              you can set rk = 1.
-c	  dir = 1 for forward transform,
-c		-1 for backward transform.
+c     dir = 1 for forward transform,
+c       -1 for backward transform.
 c               A backward transform (dir = -1) is the same as
 c               a forward transform with q -> -q and rk -> 1/rk,
 c               for any kr if n is odd,
 c               for low-ringing kr if n is even.
-c	  wsave = working array set up by fhti.
+c     wsave = working array set up by fhti.
 c Input/Output:
 c         a on  input is the array A(r) to transform:
 c             a(j) is A(r_j) at r_j = r_c exp[(j-jc) dlnr]
@@ -602,13 +612,13 @@ c a call to fht with dir=-1, or vice versa,
 c leaves the array a unchanged.
 c
 c  Input: n = length of a array.
-c	  dir = 1 for forward transform,
-c		-1 for backward transform.
+c     dir = 1 for forward transform,
+c       -1 for backward transform.
 c               A backward transform (dir = -1) is the same as
 c               a forward transform with q -> -q,
 c               for any kr if n is odd,
 c               for low-ringing kr if n is even.
-c	  wsave = working array set up by fhti.
+c     wsave = working array set up by fhti.
 c Input/Output:
 c         a on  input is the array A(r) to transform:
 c             a(j) is A(r_j) at r_j = r_c exp[(j-jc) dlnr]
@@ -670,8 +680,8 @@ c a call to fhtq with dir=-1, or vice versa,
 c leaves the array a unchanged.
 c
 c  Input: n = length of a array.
-c	  dir = 1 for forward transform,
-c		-1 for backward transform.
+c     dir = 1 for forward transform,
+c       -1 for backward transform.
 c               A backward transform (dir = -1) is the same as
 c               a forward transform with q -> -q,
 c               for any kr if n is odd,
@@ -693,7 +703,7 @@ c
       l=2*n+15
       q=wsave(l+1)
       l=l+3
-c--------normal FFT
+c--------normal FFT  %DW Change drfftf->dfft
       call dfftf(n,a,wsave)
 c--------unbiased (q = 0) transform
       if (q.eq.ZERO) then
@@ -804,9 +814,9 @@ c because it makes the transition of this function across the period
 c boundary smoother.
 c
 c  Input: mu = index of J_mu in Hankel transform.
-c	  q = exponent of power law bias.
+c     q = exponent of power law bias.
 c         dlnr = separation between natural log of points.
-c	  kr = suggested value of kr.
+c     kr = suggested value of kr.
 c Output: krgood = low-ringing value of kr nearest to input kr.
 c                  ln(krgood) is always within dlnr/2 of ln(kr).
 c
@@ -842,21 +852,21 @@ c        low-ringing kr
       end
 c
 c-----------------------------------------------------------------------
-      integer function stblnk(string)
-      character*(*) string
-c
-c        externals
-      integer lnblnk
-c        local (automatic) variables
-      integer i
-c *
-c * Return index of first non-blank character in string.
-c * If string is all blank, returned index is 1+lnblnk(string).
-c *
-      do i=1,lnblnk(string)
-        if (string(i:i).ne.' ') goto 120
-      enddo
-  120 stblnk=i
-      return
-      end
-c
+c      integer function stblnk(string)  %DW comment stblnk, not used
+c      character*(*) string
+cc
+cc        externals
+c      integer lnblnk
+cc        local (automatic) variables
+c      integer i
+cc *
+cc * Return index of first non-blank character in string.
+cc * If string is all blank, returned index is 1+lnblnk(string).
+cc *
+c      do i=1,lnblnk(string)
+c        if (string(i:i).ne.' ') goto 120
+c      enddo
+c  120 stblnk=i
+c      return
+c      end
+cc
