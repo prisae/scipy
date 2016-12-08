@@ -327,22 +327,38 @@ python module _fftpack
          intent(c) destroy_dst1_cache
        end subroutine destroy_dst1_cache
 
-       subroutine fftlog(x, n, mu, q, dlnr, kr, rk, kropt, direction, howmany)
-         ! y, kr = fftlog(x[, n, mu, q , dlnr, kr, rk, kropt, direction, overwrite_x)
-         intent(c) fftlog
+       subroutine drfftl(x, n, mu, q, dlnr, kr, rk, kropt, direction, howmany)
+         ! y = drfftl(x[,n,mu, q , dlnr, kr, rk, kropt, direction, overwrite_x])
+         intent(c) drfftl
          real*8 intent(c, in, out, copy, out=y) :: x(*)
          integer optional, depend(x), intent(c, in) :: n=size(x)
          real*8 optional, intent(c, in) :: mu = 0.5
          real*8 optional, intent(c, in) :: q = 0
          real*8 optional, intent(c, in) :: dlnr = 0.2
-         real*8 optional, intent(c, in, out) :: kr = 1
+         real*8 optional, intent(c, in) :: kr = 1
          real*8 optional, intent(c, in) :: rk = 1
          integer optional, intent(c, in) :: kropt = 1
          check(n>0&&n<=size(x)) n
          integer depend(x,n), intent(c, hide) :: howmany = size(x)/n
          check(n*howmany==size(x)) howmany
          integer optional, intent(c,in) :: direction = 1
-       end subroutine fftlog
+       end subroutine drfftl
+
+       subroutine drfht(x, n, mu, q, dlnr, kr, kropt, direction, howmany)
+         ! y = drfht(x[,n,mu, q , dlnr, kr, kropt, direction, overwrite_x])
+         intent(c) drfht
+         real*8 intent(c, in, out, copy, out=y) :: x(*)
+         integer optional, depend(x), intent(c, in) :: n=size(x)
+         real*8 optional, intent(c, in) :: mu = 0.5
+         real*8 optional, intent(c, in) :: q = 0
+         real*8 optional, intent(c, in) :: dlnr = 0.2
+         real*8 optional, intent(c, in) :: kr = 1
+         integer optional, intent(c, in) :: kropt = 1
+         check(n>0&&n<=size(x)) n
+         integer depend(x,n), intent(c, hide) :: howmany = size(x)/n
+         check(n*howmany==size(x)) howmany
+         integer optional, intent(c,in) :: direction = 1
+       end subroutine drfht
 
        subroutine destroy_fftlog_cache()
          intent(c) destroy_fftlog_cache

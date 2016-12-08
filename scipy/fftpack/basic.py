@@ -5,7 +5,7 @@ Discrete Fourier Transforms - basic.py
 from __future__ import division, print_function, absolute_import
 
 __all__ = ['fft','ifft','fftn','ifftn','rfft','irfft',
-           'fft2','ifft2', 'fftlog']
+           'fft2','ifft2', 'rfftl', 'rfht']
 
 from numpy import zeros, swapaxes
 import numpy
@@ -666,8 +666,9 @@ def ifft2(x, shape=None, axes=(-2,-1), overwrite_x=False):
     return ifftn(x,shape,axes,overwrite_x)
 
 
-def _raw_fftlog(x, n, mu, q, dlnr, kr, rk, kropt, axis, direction, overwrite_x, work_function):
-    """ Internal auxiliary function for fftlog, ifftlog, fht, ifht."""
+def _raw_fftlog(x, n, mu, q, dlnr, kr, rk, kropt, axis, direction, overwrite_x,
+                work_function):
+    """ Internal auxiliary function for rfftl, irfftl, rfht, irfht."""
     if n is None:
         n = x.shape[axis]
     elif n != x.shape[axis]:
@@ -678,21 +679,30 @@ def _raw_fftlog(x, n, mu, q, dlnr, kr, rk, kropt, axis, direction, overwrite_x, 
         raise ValueError("Invalid number of FFT data points "
                          "(%d) specified." % n)
 
-    if axis == -1 or axis == len(x.shape)-1:
-        r, kr = work_function(x, n, mu, q, dlnr, kr, rk, kropt, direction, overwrite_x=overwrite_x)
-    else:
+    testax = (axis == -1 or axis == len(x.shape)-1)
+    if not testax:
         x = swapaxes(x, axis, -1)
-        r, kr = work_function(x, n, mu, q, dlnr, kr, rk, kropt, direction, overwrite_x=overwrite_x)
+
+    if rk:
+        inp = (x, n, mu, q, dlnr, kr, rk, kropt, direction, overwrite_x)
+    else:
+        inp = (x, n, mu, q, dlnr, kr, kropt, direction, overwrite_x)
+    r = work_function(*inp)
+
+    if not testax:
         r = swapaxes(r, axis, -1)
-    return r # return r, kr
+
+    return r
 
 
-def fftlog(x, n=None, mu=0.5, q=0, dlnr=0.2, kr=1, rk=1, kropt=1, axis=-1, overwrite_x=False):
+def rfftl(x, dlnr, mu=0.5, q=0, kr=1, kropt=1, rminmax=(0,0), n=None,
+          axis=-1, overwrite_x=False):
     """
     FFTLog
     """
 
-    #!! check if mu = {0.5, -0.5}
+    # For rk-calculation without kr-new; final rk is rk/krnew in fftl
+    rk = 10**(rminmax[0] + rminmax[1])
 
     tmp = _asfarray(x)
 
@@ -701,12 +711,38 @@ def fftlog(x, n=None, mu=0.5, q=0, dlnr=0.2, kr=1, rk=1, kropt=1, axis=-1, overw
 
     try:
         # work_function = _DTYPE_TO_RFFT[tmp.dtype]
-        work_function = _fftpack.fftlog
+        work_function = _fftpack.drfftl
     except KeyError:
         raise ValueError("type %s is not supported" % tmp.dtype)
 
     overwrite_x = overwrite_x or _datacopied(tmp, x)
 
-    return _raw_fftlog(tmp, n, mu, q, dlnr, kr, rk, kropt, axis, 1, overwrite_x, work_function)
-    # return y, kr
+    y = _raw_fftlog(tmp, n, mu, q, dlnr, kr, rk, kropt, axis, 1, overwrite_x,
+                    work_function)
 
+    return y
+
+
+def rfht(x, dlnr, mu=0, q=0, kr=1, kropt=1, n=None, axis=-1,
+         overwrite_x=False):
+    """
+    fht
+    """
+
+    tmp = _asfarray(x)
+
+    if not numpy.isrealobj(tmp):
+        raise TypeError("1st argument must be real sequence")
+
+    try:
+        # work_function = _DTYPE_TO_RFFT[tmp.dtype]
+        work_function = _fftpack.drfht
+    except KeyError:
+        raise ValueError("type %s is not supported" % tmp.dtype)
+
+    overwrite_x = overwrite_x or _datacopied(tmp, x)
+
+    y = _raw_fftlog(tmp, n, mu, q, dlnr, kr, None, kropt, axis, 1, overwrite_x,
+                    work_function)
+
+    return y

@@ -13,7 +13,11 @@ c
 c Modifications (all marked with comments: %DW):
 c   - drfft* -> dfft*
 c   - kr: remove verbose and interactive options (kropt={0,1})
-c         => therefore remove as well function stblnk(string)
+c         => remove parameters : ok, lnblnk, stblnk, go, temp
+c         => remove function   : stblnk(string)
+c   - rk in fftl: replace lnrk=log(rk) with lnrk=log(rk/kr); this way,
+c                 one does not have to know the new value of kr from
+c                 wsave.
 c
 c---Start of revision history-------------------------------------------
 c
@@ -572,7 +576,9 @@ c........transform a(r) -> ã(k)
 c........Ã(k) = ã(k) k^[-dir*(q+.5)] rc^[-dir*(q-.5)]
 c        = ã(k) (k/kc)^[-dir*(q+.5)] (kc rc)^(-dir*q) (rc/kc)^(dir*.5)
       lnkr=log(kr)
-      lnrk=log(rk)
+c     %DW replace lnrk=log(rk) with lnrk=log(rk/kr); this way, one does
+c         not have to know the new value of kr from wsave.
+      lnrk=log(rk/kr)
       do j=1,n
         a(j)=a(j)*exp(-dir*((q+HALF)*(j-jc)*dlnr+q*lnkr-HALF*lnrk))
       enddo

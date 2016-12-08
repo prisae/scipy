@@ -83,7 +83,7 @@ from __future__ import division, print_function, absolute_import
 
 __all__ = ['fft','ifft','fftn','ifftn','rfft','irfft',
            'fft2','ifft2',
-           'fftlog',
+           'rfftl', 'rfht',
            'diff',
            'tilbert','itilbert','hilbert','ihilbert',
            'sc_diff','cs_diff','cc_diff','ss_diff',
