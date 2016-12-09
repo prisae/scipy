@@ -6,46 +6,46 @@ Done
 ----
 - `basic.py`
   - `atexit`: destroy fftlog cache
-  - `_raw_fftlog` aux-fct for `rfftl`, `irfftl`, `rfht`, `irfht`
+  - `_raw_fftlog` aux-fct for `rfftl`
   - `rfftl`: Logarithmic fast Fourier transform; forward
-  - `rfht` : Logarithmic fast Hankel transform; forward
 
 - `fftpack.pyf`
   - `subroutine drfht`
+  - `subroutine getkr`
   - `subroutine destroy_fftlog_cache`
 
 - `src/drfft.c`
-  - `F_FUNC` for `fftl`, `fht`, and `fhti`.
+  - `F_FUNC` for `fftl` and `fhti`.
   - `GEN_CACHE(fftlog,...)`
   - `drfftl`
-  - `drfht`
 
 - `setup.py`: `fftlog_src` and `fftlog`-library
 
-- `__init__.py`: Added `rfftl`, `rfht`
+- `__init__.py`: Added `rfftl`
 
 - `src/fftlog/fftlog.f`: Adjusted for inclusion, all changes are marked with
   `%DW`
   - `drfft*` -> `dfft*`
-  - `kr`: remove verbose and interactive options (`kropt={0,1}`)
-    - remove parameters : `ok`, `lnblnk`, `stblnk`, `go`, `temp`
+  - `kr`: remove `kropt` from `fhti` (see `getkr`)
+    - remove parameters : `kropt`, `ok`, `lnblnk`, `stblnk`, `go`, `temp`
     - remove function   : `stblnk(string)`
-  - `rk` in `fftl`: replace `lnrk=log(rk)` with `lnrk=log(rk/kr)`; this way,
-    one does not have to know the new value of `kr` from `wsave`.
-- Simple notebooks to test the implementation, in `scipy/scipy/fftpack/.`
+    - `kr` has to be defined exactly before calling `fhti`
+  - `krgood`: change from `function krgood` to `subroutine getkr`
+
+- Simple notebook `scipy/scipy/fftpack/FFTLog-Examples.ipynb` to test the
+  implementation.
 
 
 ToDo's
 ------
 - `basic.py`
-  - `_raw_fftlog`, `rfftl`, `rfht` : proper implementation and documentation
-  - implement `irfftl` and `irfht` (inverse fct's of  `rfftl` and `rfht`)
+  - `_raw_fftlog`, `rfftl` : proper implementation and documentation
+  - implement `irfftl` (and `rfht`/`irfht`?)
 - `__init__.py`: Documentation
 - Replace `cdgamma` with `scipy.special.loggamma` (asked Joshua W. for help)
 - Add tests
 - Adjust: `bento.info`, `bscript`, `fftpack_version.py`, `MANIFEST.in`,
   `NOTES.txt`
-- The new `kr`-values has to be returned, if adjusted! (`krgood`)
 
 
 Questions

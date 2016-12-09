@@ -12,12 +12,11 @@ c Werthmüller dated 07 October 2016).
 c
 c Modifications (all marked with comments: %DW):
 c   - drfft* -> dfft*
-c   - kr: remove verbose and interactive options (kropt={0,1})
-c         => remove parameters : ok, lnblnk, stblnk, go, temp
+c   - kr: remove kropt from fhti (see getkr)
+c         => remove parameters : kropt, ok, lnblnk, stblnk, go, temp
 c         => remove function   : stblnk(string)
-c   - rk in fftl: replace lnrk=log(rk) with lnrk=log(rk/kr); this way,
-c                 one does not have to know the new value of kr from
-c                 wsave.
+c   - krgood: change from function krgood to subroutine getkr
+c         => kr has to be defined exactly before calling fhti
 c
 c---Start of revision history-------------------------------------------
 c
@@ -245,9 +244,10 @@ c
 c=======================================================================
 c THE FFTLog CODE
 c=======================================================================
-c     subroutine fhti(n,mu,q,dlnr,kr,kropt,wsave,ok)  %DW remove ok
-      subroutine fhti(n,mu,q,dlnr,kr,kropt,wsave)
-      integer n,kropt
+c     subroutine fhti(n,mu,q,dlnr,kr,kropt,wsave,ok) %DW remove kropt,ok
+      subroutine fhti(n,mu,q,dlnr,kr,wsave)
+      integer n
+c     integer kropt %DW remove kropt
 c     logical ok  %DW remove ok
       real*8 mu,q,dlnr,kr,wsave(*)
 c
@@ -320,12 +320,9 @@ c      character*64 temp  %DW removed, unused
       real*8 amp,arg,d,ln2,ln2kr,xm,xp,y
       complex*16 zm,zp
 c
-c-----%DW New kr-routine, only kropt={0,1}
-c        change kr to low-ringing kr quietly
-      if (kropt.eq.1) then
-        kr=krgood(mu,q,dlnr,kr)
-      endif
-c--------adjust kr  %DW commented out; original version
+c-----%DW removed kropt, kr has to be provided exatly;
+c         see subroutine getkr
+cc--------adjust kr
 cc        keep kr as is
 c      if (kropt.eq.0) then
 c        continue
@@ -576,9 +573,7 @@ c........transform a(r) -> ã(k)
 c........Ã(k) = ã(k) k^[-dir*(q+.5)] rc^[-dir*(q-.5)]
 c        = ã(k) (k/kc)^[-dir*(q+.5)] (kc rc)^(-dir*q) (rc/kc)^(dir*.5)
       lnkr=log(kr)
-c     %DW replace lnrk=log(rk) with lnrk=log(rk/kr); this way, one does
-c         not have to know the new value of kr from wsave.
-      lnrk=log(rk/kr)
+      lnrk=log(rk)
       do j=1,n
         a(j)=a(j)*exp(-dir*((q+HALF)*(j-jc)*dlnr+q*lnkr-HALF*lnrk))
       enddo
@@ -709,7 +704,7 @@ c
       l=2*n+15
       q=wsave(l+1)
       l=l+3
-c--------normal FFT  %DW Change drfftf->dfft
+c--------normal FFT  %DW Change drfftf->dfftf
       call dfftf(n,a,wsave)
 c--------unbiased (q = 0) transform
       if (q.eq.ZERO) then
@@ -791,7 +786,7 @@ c and real part ar is guaranteed nonzero.
           endif
         endif
       endif
-c--------normal FFT back
+c--------normal FFT back  %DW Change drfftb->dfftb
       call dfftb(n,a,wsave)
 c--------reverse the array
 c        and at the same time undo the FFTs' multiplication by n 
@@ -808,8 +803,13 @@ c        and at the same time undo the FFTs' multiplication by n
       end
 c
 c=======================================================================
-      real*8 function krgood(mu,q,dlnr,kr)
+      subroutine getkr(mu,q,dlnr,kr,kropt)
+      integer kropt
       real*8 mu,q,dlnr,kr
+c        parameters
+      real*8 krgood
+c     real*8 function krgood(mu,q,dlnr,kr)  %DW replace function with
+c     real*8 mu,q,dlnr,kr                       subroutine
 c
 c Use of this routine is optional.
 c
@@ -836,23 +836,25 @@ c        externals
 c        local (automatic) variables
       real*8 arg,iarg,xm,xp,y
       complex*16 zm,zp
-c
-      krgood=kr
-      if (dlnr.eq.ZERO) return
-      xp=(mu+ONE+q)/TWO
-      xm=(mu+ONE-q)/TWO
-      y=PI/(TWO*dlnr)
-      zp=dcmplx(xp,y)
-      zm=dcmplx(xm,y)
-      zp=cdgamma(zp,1)
-      zm=cdgamma(zm,1)
+c     %DW included the function in a loop
+      if (kropt.eq.1) then
+c        krgood=kr
+        if (dlnr.eq.ZERO) return
+        xp=(mu+ONE+q)/TWO
+        xm=(mu+ONE-q)/TWO
+        y=PI/(TWO*dlnr)
+        zp=dcmplx(xp,y)
+        zm=dcmplx(xm,y)
+        zp=cdgamma(zp,1)
+        zm=cdgamma(zm,1)
 c        low-ringing condition is that following should be integral
-      arg=log(TWO/kr)/dlnr+(dimag(zp)+dimag(zm))/PI
-      iarg=anint(arg)
+        arg=log(TWO/kr)/dlnr+(dimag(zp)+dimag(zm))/PI
+        iarg=anint(arg)
 c        if should ensure arg = +-Infinity dealt with correctly
-      if (arg.ne.iarg) then
-c        low-ringing kr
-        krgood=kr*exp((arg-iarg)*dlnr)
+        if (arg.ne.iarg) then
+c        low-ringing kr  %DW krgood=kr... => kr=kr...
+            kr=kr*exp((arg-iarg)*dlnr)
+        endif
       endif
       return
       end

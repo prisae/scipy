@@ -1,10 +1,12 @@
 from __future__ import division, print_function, absolute_import
 
-from numpy import arange
+from numpy import arange, log, log10
 from numpy.fft.helper import fftshift, ifftshift, fftfreq
 from bisect import bisect_left
+from . import _fftpack
 
-__all__ = ['fftshift', 'ifftshift', 'fftfreq', 'rfftfreq', 'next_fast_len']
+__all__ = ['fftshift', 'ifftshift', 'fftfreq', 'rfftfreq', 'next_fast_len',
+           'rfftlogargs']
 
 
 def rfftfreq(n, d=1.0):
@@ -147,3 +149,36 @@ def next_fast_len(target):
     if p5 < match:
         match = p5
     return match
+
+
+def rfftlogargs(start, stop, num, mu=0.5, q=0, kr=1, kropt=0):
+    """TODO """
+
+    # central point log10(r_c) of periodic interval
+    logrc = (start + stop)/2
+
+    # central index (1/2 integral if num is even)
+    nc = (num + 1)/2.0
+
+    # log spacing of points
+    dlogr = (stop - start)/num   # decimal log
+    dlnr = dlogr*log(10.0)  # natural log
+
+    # frequencies
+    freq = 10**(logrc + (arange(num)+1 - nc)*dlogr)
+
+    # get low-ringing kr
+    if kropt == 1:
+        kr = _fftpack.getkr(mu=mu, q=q, dlnr=dlnr, kr=kr, kropt=kropt)
+
+    # central point log10(k_c) of periodic interval
+    logkc = log10(kr) - logrc
+
+    # rk = r_c/k_c
+    rk = 10**(logrc - logkc)
+
+    # times
+    time = 10**(logkc + (arange(num)+1 - nc)*dlogr)
+
+    return freq, time, dlnr, kr, rk
+
