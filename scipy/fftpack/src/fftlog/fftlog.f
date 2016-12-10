@@ -67,9 +67,9 @@ c
 c Andrew J S Hamilton March 1999
 c email: Andrew.Hamilton@Colorado.EDU
 c
-c Refs: Talman J. D., 1978, J. Comp. Phys., 29, 35
-c   Hamilton A. J. S., 2000, MNRAS, 312, 257
-c   ( http://xxx.lanl.gov/abs/astro-ph/9905191 )
+c Refs:	Talman J. D., 1978, J. Comp. Phys., 29, 35
+c	Hamilton A. J. S., 2000, MNRAS, 312, 257
+c	( http://xxx.lanl.gov/abs/astro-ph/9905191 )
 c
 c FFTLog uses the NCAR suite of FFT routines,
 c and a modified version of the complex Gamma function
@@ -271,21 +271,21 @@ c
 c  Input: n = number of points in the array to be transformed;
 c             n may be any positive integer, but the NCAR FFT routines
 c             run fastest if n is a product of small primes 2, 3, 5.
-c     mu = index of J_mu in Hankel transform;
-c          mu may be any real number, positive or negative.
-c     q = exponent of power law bias;
-c         q may be any real number, positive or negative.
+c	  mu = index of J_mu in Hankel transform;
+c	       mu may be any real number, positive or negative.
+c	  q = exponent of power law bias;
+c	      q may be any real number, positive or negative.
 c             If in doubt, use q = 0, for which case the Hankel
 c             transform is orthogonal, i.e. self-inverse,
 c             provided also that, for n even, kr is low-ringing.
 c             Non-zero q may yield better approximations to the
 c             continuous Hankel transform for some functions.
 c         dlnr = separation between natural log of points;
-c        dlnr may be positive or negative.
-c     kr = k_c r_c where c is central point of array
+c		 dlnr may be positive or negative.
+c	  kr = k_c r_c where c is central point of array
 c              = k_j r_(n+1-j) = k_(n+1-j) r_j .
-c          Normally one would choose kr to be about 1
-c          (or 2, or pi, to taste).
+c	       Normally one would choose kr to be about 1
+c	       (or 2, or pi, to taste).
 c         kropt = 0 to use input kr as is;
 c                 1 to change kr to nearest low-ringing kr, quietly;
 c                 2 to change kr to nearest low-ringing kr, verbosely;
@@ -538,13 +538,13 @@ c              rk is used only to multiply the output array by
 c              sqrt(rk)^dir, so if you want to do the normalization
 c              later, or you don't care about the normalization,
 c              you can set rk = 1.
-c     dir = 1 for forward transform,
-c       -1 for backward transform.
+c	  dir = 1 for forward transform,
+c		-1 for backward transform.
 c               A backward transform (dir = -1) is the same as
 c               a forward transform with q -> -q and rk -> 1/rk,
 c               for any kr if n is odd,
 c               for low-ringing kr if n is even.
-c     wsave = working array set up by fhti.
+c	  wsave = working array set up by fhti.
 c Input/Output:
 c         a on  input is the array A(r) to transform:
 c             a(j) is A(r_j) at r_j = r_c exp[(j-jc) dlnr]
@@ -614,13 +614,13 @@ c a call to fht with dir=-1, or vice versa,
 c leaves the array a unchanged.
 c
 c  Input: n = length of a array.
-c     dir = 1 for forward transform,
-c       -1 for backward transform.
+c	  dir = 1 for forward transform,
+c		-1 for backward transform.
 c               A backward transform (dir = -1) is the same as
 c               a forward transform with q -> -q,
 c               for any kr if n is odd,
 c               for low-ringing kr if n is even.
-c     wsave = working array set up by fhti.
+c	  wsave = working array set up by fhti.
 c Input/Output:
 c         a on  input is the array A(r) to transform:
 c             a(j) is A(r_j) at r_j = r_c exp[(j-jc) dlnr]
@@ -682,8 +682,8 @@ c a call to fhtq with dir=-1, or vice versa,
 c leaves the array a unchanged.
 c
 c  Input: n = length of a array.
-c     dir = 1 for forward transform,
-c       -1 for backward transform.
+c	  dir = 1 for forward transform,
+c		-1 for backward transform.
 c               A backward transform (dir = -1) is the same as
 c               a forward transform with q -> -q,
 c               for any kr if n is odd,
@@ -821,9 +821,9 @@ c because it makes the transition of this function across the period
 c boundary smoother.
 c
 c  Input: mu = index of J_mu in Hankel transform.
-c     q = exponent of power law bias.
+c	  q = exponent of power law bias.
 c         dlnr = separation between natural log of points.
-c     kr = suggested value of kr.
+c	  kr = suggested value of kr.
 c Output: krgood = low-ringing value of kr nearest to input kr.
 c                  ln(krgood) is always within dlnr/2 of ln(kr).
 c
