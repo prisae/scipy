@@ -181,4 +181,3 @@ def rfftlogargs(start, stop, num, mu=0.5, q=0, kr=1, kropt=0):
     time = 10**(logkc + (arange(num)+1 - nc)*dlogr)
 
     return freq, time, dlnr, kr, rk
-

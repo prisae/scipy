@@ -5,7 +5,6 @@
  */
 
 #include "fftpack.h"
-#include<stdio.h>
 
 extern void F_FUNC(dfftf, DFFTF) (int *, double *, double *);
 extern void F_FUNC(dfftb, DFFTB) (int *, double *, double *);
@@ -13,7 +12,8 @@ extern void F_FUNC(dffti, DFFTI) (int *, double *);
 extern void F_FUNC(rfftf, RFFTF) (int *, float *, float *);
 extern void F_FUNC(rfftb, RFFTB) (int *, float *, float *);
 extern void F_FUNC(rffti, RFFTI) (int *, float *);
-extern void F_FUNC(fftl, FFTL) (int *, double *, double *, int *, double *);
+extern void F_FUNC(fftl, FFTL) (int *, double *, double *, int *, double *,
+                                double *);
 extern void F_FUNC(fhti, FHTI) (int *, double *, double *, double *, double *,
                                 double *);
 
@@ -37,14 +37,14 @@ GEN_CACHE(rfft, (int n)
 
 GEN_CACHE(fftlog
       , (int n, double mu, double q, double dlnr, double kr, int size)
-      , double *wsave; double mu; double q; double dlnr; double kr;
+      , double *xsave; double mu; double q; double dlnr; double kr;
       , ((caches_fftlog[i].n == n) && (caches_fftlog[i].mu == mu) &&
          (caches_fftlog[i].q == q) && (caches_fftlog[i].dlnr == dlnr) &&
          (caches_fftlog[i].kr == kr))
-      , caches_fftlog[id].wsave = (double *)
+      , caches_fftlog[id].xsave = (double *)
         malloc(sizeof(double) * size);
-        F_FUNC(fhti, FHTI) (&n, &mu, &q, &dlnr, &kr, caches_fftlog[id].wsave);
-      , free(caches_fftlog[id].wsave);
+        F_FUNC(fhti, FHTI) (&n, &mu, &q, &dlnr, &kr, caches_fftlog[id].xsave);
+      , free(caches_fftlog[id].xsave);
       , 10)
 
 
@@ -124,18 +124,20 @@ void drfftl(double *inout, int n, double mu, double q, double dlnr, double kr,
     int i;
     int size;
     double *ptr = inout;
+    double *xsave = NULL;
     double *wsave = NULL;
 
     if ( q != 0) {
-        size = 2 * n + 3 * (n / 2) + 19;
+        size = 3 * (n / 2) + 4;
     }
     else {
-        size = 2 * n + 2 * (n / 2) + 18;
+        size = 2 * (n / 2) + 3;
     }
 
-    wsave = caches_fftlog[get_cache_id_fftlog(n, mu, q, dlnr, kr, size)].wsave;
+    wsave = caches_drfft[get_cache_id_drfft(n)].wsave;
+    xsave = caches_fftlog[get_cache_id_fftlog(n, mu, q, dlnr, kr, size)].xsave;
 
     for (i = 0; i < howmany; ++i, ptr += n) {
-        F_FUNC(fftl, FFTL)(&n, ptr, &rk, &direction, wsave);
+        F_FUNC(fftl, FFTL)(&n, ptr, &rk, &direction, wsave, xsave);
     }
 }
