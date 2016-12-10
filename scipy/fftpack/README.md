@@ -27,10 +27,14 @@ Done
   `%DW`
   - `drfft*` -> `dfft*`
   - `kr`: remove `kropt` from `fhti` (see `getkr`)
+    - `kr` has to be defined exactly before calling `fhti`
     - remove parameters : `kropt`, `ok`, `lnblnk`, `stblnk`, `go`, `temp`
     - remove function   : `stblnk(string)`
-    - `kr` has to be defined exactly before calling `fhti`
   - `krgood`: change from `function krgood` to `subroutine getkr`
+  - split `wsave` into `wsave` and `xsave`
+    - `wsave` is as in regular FFT
+    - `xsave` is the fftlog-addition to `wsave`
+    - moved `dffti` from `fhti` to `fhtq`
 
 - Simple notebook `scipy/scipy/fftpack/FFTLog-Examples.ipynb` to test the
   implementation.

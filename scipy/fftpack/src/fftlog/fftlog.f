@@ -13,10 +13,14 @@ c
 c Modifications (all marked with comments: %DW):
 c   - drfft* -> dfft*
 c   - kr: remove kropt from fhti (see getkr)
+c         => kr has to be defined exactly before calling fhti
 c         => remove parameters : kropt, ok, lnblnk, stblnk, go, temp
 c         => remove function   : stblnk(string)
 c   - krgood: change from function krgood to subroutine getkr
-c         => kr has to be defined exactly before calling fhti
+c   - split wsave into wsave and xsave
+c         => wsave is as in regular fft
+c         => xsave is the fftlog-addition to wsave
+c         => moved dffti from fhti to fhtq
 c
 c---Start of revision history-------------------------------------------
 c
@@ -244,12 +248,11 @@ c
 c=======================================================================
 c THE FFTLog CODE
 c=======================================================================
-c     subroutine fhti(n,mu,q,dlnr,kr,kropt,wsave,ok) %DW remove kropt,ok
-      subroutine fhti(n,mu,q,dlnr,kr,wsave)
-      integer n
-c     integer kropt %DW remove kropt
-c     logical ok  %DW remove ok
-      real*8 mu,q,dlnr,kr,wsave(*)
+!      subroutine fhti(n,mu,q,dlnr,kr,kropt,wsave,ok)
+      subroutine fhti(n,mu,q,dlnr,kr,xsave) !%DW remove kropt,ok
+      integer n  !%DW remove kropt          !    wsave-> xsave
+!      logical ok !%DW remove ok
+      real*8 mu,q,dlnr,kr,xsave(*) !%DW wsave->xsave
 c
 c fhti initializes the working array wsave
 c used by fftl, fht, and fhtq, and by NCAR routines drfftf and drfftb.
@@ -310,66 +313,65 @@ c        parameters
       real*8 ROUND
       parameter (ROUND=1.d-15)
 c        externals
-c      integer lnblnk,stblnk  %DW removed, unused
+!      integer lnblnk,stblnk  %DW removed, unused
       real*8 krgood
       complex*16 cdgamma
 c        local (automatic) variables
-c      character*1 go  %DW removed, unused
-c      character*64 temp  %DW removed, unused
+!      character*1 go  %DW removed, unused
+!      character*64 temp  %DW removed, unused
       integer l,m
       real*8 amp,arg,d,ln2,ln2kr,xm,xp,y
       complex*16 zm,zp
 c
-c-----%DW removed kropt, kr has to be provided exatly;
-c         see subroutine getkr
-cc--------adjust kr
-cc        keep kr as is
-c      if (kropt.eq.0) then
-c        continue
-cc        change kr to low-ringing kr quietly
-c      elseif (kropt.eq.1) then
-c        kr=krgood(mu,q,dlnr,kr)
-cc        change kr to low-ringing kr verbosely
-c      elseif (kropt.eq.2) then
-c        d=krgood(mu,q,dlnr,kr)
-c        if (abs(kr/d-ONE).gt.ROUND) then
-c          kr=d
-c          write (*,'(" kr changed to",g24.16)') kr
-c        endif
-cc        option to change kr to low-ringing kr interactively
-c      else
-c        d=krgood(mu,q,dlnr,kr)
-c        if (abs(kr/d-ONE).gt.ROUND) then
-cc        fortran demonstrates its inferiority to C
-c          write (*,'(" change kr = ",$)')
-c          write (temp,*) kr
-c          write (*,'(a,$)') temp(stblnk(temp):lnblnk(temp))
-c          write (*,'(" to low-ringing kr = ",$)')
-c          write (temp,*) d
-c          write (*,'(a,$)') temp(stblnk(temp):lnblnk(temp))
-c          write (*,'("? [CR,y=yes, n=no, x=exit]: ",$)')
-c          read (*,'(a1)') go
-c          if (go.eq.' '.or.go.eq.'y'.or.go.eq.'Y') then
-c            kr=d
-c            write (*,'(" kr changed to",g24.16)') kr
-c          elseif (go.eq.'n'.or.go.eq.'N') then
-c            print *,'kr left unchanged at',kr
-c          else
-c            print *,'exit'
-c            goto 300
-c          endif
-c        endif
-c      endif
+!-----%DW removed kropt, kr has to be provided exatly => subroutine getkr
+!c--------adjust kr
+!c        keep kr as is
+!      if (kropt.eq.0) then
+!        continue
+!c        change kr to low-ringing kr quietly
+!      elseif (kropt.eq.1) then
+!        kr=krgood(mu,q,dlnr,kr)
+!c        change kr to low-ringing kr verbosely
+!      elseif (kropt.eq.2) then
+!        d=krgood(mu,q,dlnr,kr)
+!        if (abs(kr/d-ONE).gt.ROUND) then
+!          kr=d
+!          write (*,'(" kr changed to",g24.16)') kr
+!        endif
+!c        option to change kr to low-ringing kr interactively
+!      else
+!        d=krgood(mu,q,dlnr,kr)
+!        if (abs(kr/d-ONE).gt.ROUND) then
+!c        fortran demonstrates its inferiority to C
+!          write (*,'(" change kr = ",$)')
+!          write (temp,*) kr
+!          write (*,'(a,$)') temp(stblnk(temp):lnblnk(temp))
+!          write (*,'(" to low-ringing kr = ",$)')
+!          write (temp,*) d
+!          write (*,'(a,$)') temp(stblnk(temp):lnblnk(temp))
+!          write (*,'("? [CR,y=yes, n=no, x=exit]: ",$)')
+!          read (*,'(a1)') go
+!          if (go.eq.' '.or.go.eq.'y'.or.go.eq.'Y') then
+!            kr=d
+!            write (*,'(" kr changed to",g24.16)') kr
+!          elseif (go.eq.'n'.or.go.eq.'N') then
+!            print *,'kr left unchanged at',kr
+!          else
+!            print *,'exit'
+!            goto 300
+!          endif
+!        endif
+!      endif
 c--------return if n is <= 0
       if (n.le.0) goto 200
-c--------initialize normal FFT  %DW Change drffti->dffti
-      call dffti(n,wsave)
+c--------initialize normal FFT  !%DW move to fhtq
+!     call dffti(n,wsave)       !%DW Change drffti->dffti
 c        drfft uses first 2*n+15 elements of wsave
-      l=2*n+15
+      l=0 !%DW adjust for xsave 2*n+15->0
 c--------put q, dlnr, kr in next 3 elements of wsave
-      wsave(l+1)=q
-      wsave(l+2)=dlnr
-      wsave(l+3)=kr
+      xsave(l+1)=q    !%DW wsave->xsave
+      xsave(l+2)=dlnr !    "
+      xsave(l+3)=kr   !    "
 c        so far used 2*n+18 elements of wsave
       l=l+3
 c--------rest of wsave used by fhtq - unbiased case (q = 0)
@@ -384,8 +386,8 @@ c        y = m pi/(n dlnr)
           zp=cdgamma(zp,1)
 c        Argument of kr^(-2 i y) U_mu(2 i y)
           arg=TWO*(ln2kr*y+dimag(zp))
-          wsave(l+2*m-1)=cos(arg)
-          wsave(l+2*m)=sin(arg)
+          xsave(l+2*m-1)=cos(arg) !%DW wsave->xsave
+          xsave(l+2*m)=sin(arg)   !    "
         enddo
 c Altogether 2*n+18 + 2*(n/2) = 2*((3*n)/2)+18 elements used for q = 0,
 c which is 3*n+18 for even n, 3*n+17 for odd n.
@@ -455,7 +457,7 @@ c        note +Im(zm) to get conjugate value below real axis
           arg=dimag(zp)+dimag(zm)
         endif
 c        cos(arg) = ±1, sin(arg) = 0
-        wsave(l+1)=amp*cos(arg)
+        xsave(l+1)=amp*cos(arg) !%DW wsave->xsave
 c........remaining elements of wsave
         d=PI/(n*dlnr)
         do m=1,n/2
@@ -468,9 +470,9 @@ c        y = m pi/(n dlnr)
 c        Amplitude and Argument of kr^(-2 i y) U_mu(q + 2 i y)
           amp=exp(ln2*q+dble(zp)-dble(zm))
           arg=2*ln2kr*y+dimag(zp)+dimag(zm)
-          wsave(l+3*m-1)=amp
-          wsave(l+3*m)=cos(arg)
-          wsave(l+3*m+1)=sin(arg)
+          xsave(l+3*m-1)=amp      !%DW wsave->xsave
+          xsave(l+3*m)=cos(arg)   !    "
+          xsave(l+3*m+1)=sin(arg) !    "
         enddo
 c Altogether 2*n+18 + 3*(n/2)+1 elements used for q != 0,
 c which is (7*n)/2+19 for even n, (7*n)/2+18 for odd n.
@@ -479,19 +481,18 @@ c [i.e. wsave(l+3*m+1)=sin(arg) for m=n/2] is not used within FFTLog;
 c if a low-ringing kr is used, this element should be zero.
 c The last element is computed in case somebody wants it.
       endif
-c  200 ok=.true.   %DW remove ok
-  200 continue
+  200 continue  !%DW ok=.true. -> continue
       return
 c
 c--------error returns
-c  300 ok=.false.  %DW remove ok
-c      return      %DW remove ok
+!  300 ok=.false.  %DW remove ok
+!      return      %DW "
       end
 c
 c=======================================================================
-      subroutine fftl(n,a,rk,dir,wsave)
+      subroutine fftl(n,a,rk,dir,wsave,xsave) !%DW add xsave
       integer n,dir
-      real*8 a(n),rk,wsave(*)
+      real*8 a(n),rk,wsave(*),xsave(*) !%DW add xsave
 c
 c This is a driver routine that calls fhtq.
 c
@@ -558,10 +559,10 @@ c        local (automatic) variables
       integer j,l
       real*8 dlnr,jc,kr,lnkr,lnrk,q
 c
-      l=2*n+15
-      q=wsave(l+1)
-      dlnr=wsave(l+2)
-      kr=wsave(l+3)
+      l=0 !%DW adjust for xsave 2*n+15->0
+      q=xsave(l+1)    !%DW wsave->xsave
+      dlnr=xsave(l+2) !    "
+      kr=xsave(l+3)   !    "
 c........a(r) = A(r) (r/rc)^[-dir*(q-.5)]
 c        centre point of array
       jc=dble(n+1)/TWO
@@ -569,7 +570,7 @@ c        centre point of array
         a(j)=a(j)*exp(-dir*(q-HALF)*(j-jc)*dlnr)
       enddo
 c........transform a(r) -> ã(k)
-      call fhtq(n,a,dir,wsave)
+      call fhtq(n,a,dir,wsave,xsave) !%DW add xsave
 c........Ã(k) = ã(k) k^[-dir*(q+.5)] rc^[-dir*(q-.5)]
 c        = ã(k) (k/kc)^[-dir*(q+.5)] (kc rc)^(-dir*q) (rc/kc)^(dir*.5)
       lnkr=log(kr)
@@ -581,9 +582,9 @@ c        = ã(k) (k/kc)^[-dir*(q+.5)] (kc rc)^(-dir*q) (rc/kc)^(dir*.5)
       end
 c
 c=======================================================================
-      subroutine fht(n,a,dir,wsave)
+      subroutine fht(n,a,dir,wsave,xsave) !%DW add xsave
       integer n,dir
-      real*8 a(n),wsave(*)
+      real*8 a(n),wsave(*),xsave(*) !%DW add xsave
 c
 c This is a driver routine that calls fhtq.
 c
@@ -634,10 +635,10 @@ c        local (automatic) variables
       integer j,l
       real*8 dlnr,jc,kr,lnkr,q
 c
-      l=2*n+15
-      q=wsave(l+1)
-      dlnr=wsave(l+2)
-      kr=wsave(l+3)
+      l=0 !%DW adjust for xsave 2*n+15->0
+      q=xsave(l+1)    !%DW wsave -> xsave
+      dlnr=xsave(l+2) !    "
+      kr=xsave(l+3)   !    "
 c........a(r) = A(r) (r/rc)^(-dir*q)
       if (q.ne.ZERO) then
 c        centre point of array
@@ -647,7 +648,7 @@ c        centre point of array
         enddo
       endif
 c........transform a(r) -> ã(k)
-      call fhtq(n,a,dir,wsave)
+      call fhtq(n,a,dir,wsave,xsave) !%DW add xsave
 c........Ã(k) = ã(k) (k rc)^(-dir*q)
 c             = ã(k) (k/kc)^(-dir*q) (kc rc)^(-dir*q)
       if (q.ne.ZERO) then
@@ -660,9 +661,9 @@ c             = ã(k) (k/kc)^(-dir*q) (kc rc)^(-dir*q)
       end
 c
 c=======================================================================
-      subroutine fhtq(n,a,dir,wsave)
+      subroutine fhtq(n,a,dir,wsave,xsave) !%DW add xsave
       integer n,dir
-      real*8 a(n),wsave(*)
+      real*8 a(n),wsave(*),xsave(*) !%DW add xsave
 c
 c This is the basic FFTLog routine.
 c
@@ -701,11 +702,14 @@ c        local (automatic) variables
       integer l,m
       real*8 ai,ar,q
 c
-      l=2*n+15
-      q=wsave(l+1)
+c--------initialize normal FFT !%DW moved from fhti
+      call dffti(n,wsave)      !%DW change drffti->dffti
+
+      l=0 !%DW adjust for xsave 2*n+15->0
+      q=xsave(l+1) !%DW wsave -> xsave
       l=l+3
-c--------normal FFT  %DW Change drfftf->dfftf
-      call dfftf(n,a,wsave)
+c--------normal FFT
+      call dfftf(n,a,wsave) !%DW change drfftf->dfftf
 c--------unbiased (q = 0) transform
       if (q.eq.ZERO) then
 c........multiply by
@@ -713,12 +717,12 @@ c        (kr)^[- i 2 m pi/(n dlnr)] U_mu[i 2 m pi/(n dlnr)]
         do m=1,(n-1)/2
           ar=a(2*m)
           ai=a(2*m+1)
-          a(2*m)=ar*wsave(l+2*m-1)-ai*wsave(l+2*m)
-          a(2*m+1)=ar*wsave(l+2*m)+ai*wsave(l+2*m-1)
+          a(2*m)=ar*xsave(l+2*m-1)-ai*xsave(l+2*m)   !%DW wsave -> xsave
+          a(2*m+1)=ar*xsave(l+2*m)+ai*xsave(l+2*m-1) !    "
         enddo
 c        problematical last element, for even n
         if (mod(n,2).eq.0) then
-          ar=wsave(l+n-1)
+          ar=xsave(l+n-1) !%DW wsave -> xsave
 c        forward transform: multiply by real part
 c Why?  See http://casa.colorado.edu/~ajsh/FFTLog/index.html#ure
           if (dir.eq.1) then
@@ -741,20 +745,20 @@ c        phase
         do m=1,(n-1)/2
           ar=a(2*m)
           ai=a(2*m+1)
-          a(2*m)=ar*wsave(l+3*m)-ai*wsave(l+3*m+1)
-          a(2*m+1)=ar*wsave(l+3*m+1)+ai*wsave(l+3*m)
+          a(2*m)=ar*xsave(l+3*m)-ai*xsave(l+3*m+1)   !%DW wsave -> xsave
+          a(2*m+1)=ar*xsave(l+3*m+1)+ai*xsave(l+3*m) !    "
         enddo
 c        forward transform: multiply by amplitude
         if (dir.eq.1) then
-          a(1)=a(1)*wsave(l+1)
+          a(1)=a(1)*xsave(l+1) !%DW wsave -> xsave
           do m=1,(n-1)/2
-            a(2*m)=a(2*m)*wsave(l+3*m-1)
-            a(2*m+1)=a(2*m+1)*wsave(l+3*m-1)
+            a(2*m)=a(2*m)*xsave(l+3*m-1)     !%DW wsave -> xsave
+            a(2*m+1)=a(2*m+1)*xsave(l+3*m-1) !    "
           enddo
 c        backward transform: divide by amplitude
         elseif (dir.eq.-1) then
 c        amplitude of m=0 element
-          ar=wsave(l+1)
+          ar=xsave(l+1) !%DW wsave -> xsave
           if (ar.eq.ZERO) then
 c Amplitude of m=0 element can be zero for some mu, q combinations
 c (singular inverse); policy is to drop potentially infinite constant.
@@ -764,14 +768,14 @@ c (singular inverse); policy is to drop potentially infinite constant.
           endif
 c        remaining amplitudes should never be zero
           do m=1,(n-1)/2
-            a(2*m)=a(2*m)/wsave(l+3*m-1)
-            a(2*m+1)=a(2*m+1)/wsave(l+3*m-1)
+            a(2*m)=a(2*m)/xsave(l+3*m-1)     !%DW wsave -> xsave
+            a(2*m+1)=a(2*m+1)/xsave(l+3*m-1) !    "
           enddo
         endif
 c        problematical last element, for even n
         if (mod(n,2).eq.0) then
           m=n/2
-          ar=wsave(l+3*m)*wsave(l+3*m-1)
+          ar=xsave(l+3*m)*xsave(l+3*m-1) !%DW wsave -> xsave
 c        forward transform: multiply by real part
           if (dir.eq.1) then
             a(n)=a(n)*ar
@@ -786,8 +790,8 @@ c and real part ar is guaranteed nonzero.
           endif
         endif
       endif
-c--------normal FFT back  %DW Change drfftb->dfftb
-      call dfftb(n,a,wsave)
+c--------normal FFT back
+      call dfftb(n,a,wsave) !%DW change drfftb->dfftb
 c--------reverse the array
 c        and at the same time undo the FFTs' multiplication by n 
       do m=1,n/2
@@ -803,13 +807,10 @@ c        and at the same time undo the FFTs' multiplication by n
       end
 c
 c=======================================================================
-      subroutine getkr(mu,q,dlnr,kr,kropt)
-      integer kropt
+!      real*8 function krgood(mu,q,dlnr,kr) !%DW replace function with
+      subroutine getkr(mu,q,dlnr,kr,kropt)  !    subroutine
       real*8 mu,q,dlnr,kr
-c        parameters
-      real*8 krgood
-c     real*8 function krgood(mu,q,dlnr,kr)  %DW replace function with
-c     real*8 mu,q,dlnr,kr                       subroutine
+      integer kropt !%DW add kropt
 c
 c Use of this routine is optional.
 c
@@ -836,45 +837,45 @@ c        externals
 c        local (automatic) variables
       real*8 arg,iarg,xm,xp,y
       complex*16 zm,zp
-c     %DW included the function in a loop
-      if (kropt.eq.1) then
-c        krgood=kr
-        if (dlnr.eq.ZERO) return
-        xp=(mu+ONE+q)/TWO
-        xm=(mu+ONE-q)/TWO
-        y=PI/(TWO*dlnr)
-        zp=dcmplx(xp,y)
-        zm=dcmplx(xm,y)
-        zp=cdgamma(zp,1)
-        zm=cdgamma(zm,1)
+c
+      if (kropt.eq.1) then !%DW put the function in a if-statement
+!      krgood=kr !%DW no krgood, adjust kr in place
+      if (dlnr.eq.ZERO) return
+      xp=(mu+ONE+q)/TWO
+      xm=(mu+ONE-q)/TWO
+      y=PI/(TWO*dlnr)
+      zp=dcmplx(xp,y)
+      zm=dcmplx(xm,y)
+      zp=cdgamma(zp,1)
+      zm=cdgamma(zm,1)
 c        low-ringing condition is that following should be integral
-        arg=log(TWO/kr)/dlnr+(dimag(zp)+dimag(zm))/PI
-        iarg=anint(arg)
+      arg=log(TWO/kr)/dlnr+(dimag(zp)+dimag(zm))/PI
+      iarg=anint(arg)
 c        if should ensure arg = +-Infinity dealt with correctly
-        if (arg.ne.iarg) then
-c        low-ringing kr  %DW krgood=kr... => kr=kr...
-            kr=kr*exp((arg-iarg)*dlnr)
-        endif
+      if (arg.ne.iarg) then
+c        low-ringing kr
+        kr=kr*exp((arg-iarg)*dlnr) !%DW no krgood, adjust kr in place
       endif
+      endif !%DW end  if
       return
       end
 c
 c-----------------------------------------------------------------------
-c      integer function stblnk(string)  %DW comment stblnk, not used
-c      character*(*) string
-cc
-cc        externals
-c      integer lnblnk
-cc        local (automatic) variables
-c      integer i
-cc *
-cc * Return index of first non-blank character in string.
-cc * If string is all blank, returned index is 1+lnblnk(string).
-cc *
-c      do i=1,lnblnk(string)
-c        if (string(i:i).ne.' ') goto 120
-c      enddo
-c  120 stblnk=i
-c      return
-c      end
-cc
+!      integer function stblnk(string)  %DW comment stblnk, not used
+!      character*(*) string
+!c
+!c        externals
+!      integer lnblnk
+!c        local (automatic) variables
+!      integer i
+!c *
+!c * Return index of first non-blank character in string.
+!c * If string is all blank, returned index is 1+lnblnk(string).
+!c *
+!      do i=1,lnblnk(string)
+!        if (string(i:i).ne.' ') goto 120
+!      enddo
+!  120 stblnk=i
+!      return
+!      end
+!c
