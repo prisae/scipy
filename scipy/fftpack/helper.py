@@ -151,33 +151,91 @@ def next_fast_len(target):
     return match
 
 
-def rfftlogargs(start, stop, num, mu=0.5, q=0, kr=1, kropt=0):
-    """TODO """
+def rfftlogargs(n, dlogr=0.01, logrc=0.0, mu=0.5, q=0, kr=1, kropt=0):
+    """FFTLog input parameters (for usage with rfftl, irfftl).
 
-    # central point log10(r_c) of periodic interval
-    logrc = (start + stop)/2
+    Return the required input points and the corresponding output points, the
+    (adjusted) kr and the corresponding rk for `rfftl` and `irfftl`.
 
-    # central index (1/2 integral if num is even)
-    nc = (num + 1)/2.0
+    Parameters
+    ----------
+    n : int
+        Number of samples.
 
-    # log spacing of points
-    dlogr = (stop - start)/num   # decimal log
-    dlnr = dlogr*log(10.0)  # natural log
+    dlogr : float, optional
+        Separation between input-points (log10); may be positive or negative.
+        Default is 0.01.
 
-    # frequencies
-    freq = 10**(logrc + (arange(num)+1 - nc)*dlogr)
+    logrc : float, optional
+        Central point of periodic interval (log10). Default is 0.
 
-    # get low-ringing kr
+    mu : float, optional
+        Index of J_mu in Hankel transform; mu may be any real number, positive
+        or negative. However, for `fftl` mu must be 0.5 for a sine transform,
+        and -0.5 for a cosine transform. Only used if kropt is 1. Default is
+        0.5.
+
+    q : float, optional
+        Exponent of power law bias; q may be any real number, positive or
+        negative.  If in doubt, use q = 0, for which case the Hankel transform
+        is orthogonal, i.e. self-inverse, provided also that, for n even, kr is
+        low-ringing.  Non-zero q may yield better approximations to the
+        continuous Hankel transform for some functions. Only used if kropt is
+        1. Default is 0 (unbiased).
+
+    kr : float, optional
+        k_c r_c where c is central point of array
+        = k_j r_(n+1-j) = k_(n+1-j) r_j .
+        Normally one would choose kr to be about 1 (default) (or 2, or pi, to
+        taste). Default is 1.
+
+    kropt : int, optional; {0, 1}
+        - 0 to use input kr as is (default);
+        - 1 to change kr to nearest low-ringing kr, quietly.
+
+
+    Returns
+    -------
+    inppts : ndarray
+        Array of length `n`, containing the sample input-points.
+    outpts : ndarray
+        Array of length `n`, containing the corresponding output-points.
+    kr : float
+        Low-ringing kr if kropt=1; else same as input.
+    rk : float
+        Inverse of kr, shifted if logrc != 0 and kr != 1.
+
+    Examples
+    --------
+    >>> from scipy import fftpack
+    >>> sig = np.array([-2, 8, 6, 4, 1, 0, 3, 5], dtype=float)
+    >>> sig_fft = fftpack.rfft(sig)
+    >>> n = sig_fft.size
+    >>> timestep = 0.1
+    >>> outpts = fftpack.rfftfreq(n, d=timestep)
+    >>> outpts
+    array([ 0.  ,  1.25,  1.25,  2.5 ,  2.5 ,  3.75,  3.75,  5.  ])
+
+    """
+
+    # Central index (1/2 integral if n is even)
+    nc = (n + 1)/2.0
+
+    # Input points (frequencies)
+    inppts = 10**(logrc + (arange(n)+1 - nc)*dlogr)
+
+    # Get low-ringing kr
     if kropt == 1:
-        kr = _fftpack.getkr(mu=mu, q=q, dlnr=dlnr, kr=kr, kropt=kropt)
+        kr = _fftpack.getkr(mu=mu, q=q, dlnr=dlogr*log(10.0), kr=kr,
+                            kropt=kropt)
 
-    # central point log10(k_c) of periodic interval
+    # Central point log10(k_c) of periodic interval
     logkc = log10(kr) - logrc
 
     # rk = r_c/k_c
     rk = 10**(logrc - logkc)
 
-    # times
-    time = 10**(logkc + (arange(num)+1 - nc)*dlogr)
+    # Output points (times)
+    outpts = 10**(logkc + (arange(n)+1 - nc)*dlogr)
 
-    return freq, time, dlnr, kr, rk
+    return inppts, outpts, kr, rk
