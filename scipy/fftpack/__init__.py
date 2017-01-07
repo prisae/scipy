@@ -83,7 +83,6 @@ from __future__ import division, print_function, absolute_import
 
 __all__ = ['fft','ifft','fftn','ifftn','rfft','irfft',
            'fft2','ifft2',
-           'rfftl',
            'diff',
            'tilbert','itilbert','hilbert','ihilbert',
            'sc_diff','cs_diff','cc_diff','ss_diff',
@@ -91,12 +90,13 @@ __all__ = ['fft','ifft','fftn','ifftn','rfft','irfft',
            'fftfreq', 'rfftfreq',
            'fftshift', 'ifftshift',
            'next_fast_len',
-           'rfftlogargs'
+           'fftl', 'fftlogargs',
            ]
 
 from .fftpack_version import fftpack_version as __version__
 
 from .basic import *
+from .logarithmic import *
 from .pseudo_diffs import *
 from .helper import *
 

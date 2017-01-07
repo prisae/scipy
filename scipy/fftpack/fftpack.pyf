@@ -328,7 +328,7 @@ python module _fftpack
        end subroutine destroy_dst1_cache
 
        subroutine drfftl(x, n, mu, q, dlnr, kr, rk, direction, howmany)
-         ! y = drfftl(x[, n, mu, q , dlnr, kr, rk, direction, overwrite_x])
+         ! y = drfftl(x[, n, mu, q , dlnr, kr, rk, direction])
          intent(c) drfftl
          real*8 intent(c, in, out, copy, out=y) :: x(*)
          integer optional, depend(x), intent(c, in) :: n=size(x)

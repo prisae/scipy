@@ -18,22 +18,22 @@ extern void F_FUNC(fhti, FHTI) (int *, double *, double *, double *, double *,
                                 double *);
 
 GEN_CACHE(drfft, (int n)
-      , double *wsave;
-      , (caches_drfft[i].n == n)
-      , caches_drfft[id].wsave =
-      (double *) malloc(sizeof(double) * (2 * n + 15));
-      F_FUNC(dffti, DFFTI) (&n, caches_drfft[id].wsave);
-      , free(caches_drfft[id].wsave);
-      , 10)
+	  , double *wsave;
+	  , (caches_drfft[i].n == n)
+	  , caches_drfft[id].wsave =
+	  (double *) malloc(sizeof(double) * (2 * n + 15));
+	  F_FUNC(dffti, DFFTI) (&n, caches_drfft[id].wsave);
+	  , free(caches_drfft[id].wsave);
+	  , 10)
 
 GEN_CACHE(rfft, (int n)
-      , float *wsave;
-      , (caches_rfft[i].n == n)
-      , caches_rfft[id].wsave =
-      (float *) malloc(sizeof(float) * (2 * n + 15));
-      F_FUNC(rffti, RFFTI) (&n, caches_rfft[id].wsave);
-      , free(caches_rfft[id].wsave);
-      , 10)
+	  , float *wsave;
+	  , (caches_rfft[i].n == n)
+	  , caches_rfft[id].wsave =
+	  (float *) malloc(sizeof(float) * (2 * n + 15));
+	  F_FUNC(rffti, RFFTI) (&n, caches_rfft[id].wsave);
+	  , free(caches_rfft[id].wsave);
+	  , 10)
 
 GEN_CACHE(fftlog
       , (int n, double mu, double q, double dlnr, double kr, int size)
@@ -49,7 +49,7 @@ GEN_CACHE(fftlog
 
 
 void drfft(double *inout, int n, int direction, int howmany,
-              int normalize)
+			  int normalize)
 {
     int i;
     double *ptr = inout;
@@ -84,7 +84,7 @@ void drfft(double *inout, int n, int direction, int howmany,
 }
 
 void rfft(float *inout, int n, int direction, int howmany,
-             int normalize)
+			 int normalize)
 {
     int i;
     float *ptr = inout;
