@@ -7,7 +7,7 @@ from __future__ import division, print_function, absolute_import
 __all__ = ['fft','ifft','fftn','ifftn','rfft','irfft',
            'fft2','ifft2', 'rfftl']
 
-from numpy import zeros, swapaxes, log
+from numpy import zeros, swapaxes
 import numpy
 from . import _fftpack
 
@@ -686,7 +686,7 @@ def _raw_fftlog(x, n, mu, q, dlogr, kr, rk, axis, direction, overwrite_x,
     if not testax:
         x = swapaxes(x, axis, -1)
 
-    r = work_function(x, n, mu, q, dlogr*log(10.0), kr, rk, direction,
+    r = work_function(x, n, mu, q, dlogr*numpy.log(10.0), kr, rk, direction,
                       overwrite_x)
 
     if not testax:
