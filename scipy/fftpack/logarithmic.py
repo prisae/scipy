@@ -16,7 +16,7 @@ atexit.register(_fftl.destroy_fftl_w_cache)
 del atexit
 
 
-def fftlog(x, dlogr, mu='sine', q=0.0, kr=1.0, rk=1.0, direction=1):
+def fftlog(x, dlogr, mu='sine', q=0.0, kr=1.0, rk=1.0):
     """Fourier transform of a logarithmically spaced periodic sequence.
 
     Fast Fourier transform of a real, discrete periodic sequence of
@@ -41,11 +41,6 @@ def fftlog(x, dlogr, mu='sine', q=0.0, kr=1.0, rk=1.0, direction=1):
         \tilde{A}(k) = \tilde{a}(k) k^{-\mu -1/2}
 
     and applying a biased Hankel transform to a(r).
-
-    A call to `fftlog` with `direction=1` followed by a call to `fftlog` with
-    `direction=-1` (and rk unchanged), or vice versa, leaves the array a
-    unchanged.
-
 
     Parameters
     ----------
@@ -120,7 +115,7 @@ def fftlog(x, dlogr, mu='sine', q=0.0, kr=1.0, rk=1.0, direction=1):
     >>> fw = np.sqrt(np.pi/2/w)  # Frequency domain
     >>> ft = 1/np.sqrt(t)        # Time domain
     >>> # FFTLog
-    >>> fftl = fftlog(fw, dlogr=dlogr, mu=mu, q=q, kr=kr, rk=rk, direction=1)
+    >>> fftl = fftlog(fw, dlogr=dlogr, mu=mu, q=q, kr=kr, rk=rk)
     >>> fftl *= 2/np.pi  # Scale back
     >>> # Print result
     >>> print('Input      :', fw)
@@ -140,10 +135,6 @@ def fftlog(x, dlogr, mu='sine', q=0.0, kr=1.0, rk=1.0, direction=1):
     else:
         nmu = -0.5
 
-    # Check that direction is {1, -1}
-    if direction not in [1, -1]:
-        raise ValueError("direction must be either 1 or -1.")
-
     tmp = _asfarray(x)
 
     if len(tmp) < 1:
@@ -153,10 +144,10 @@ def fftlog(x, dlogr, mu='sine', q=0.0, kr=1.0, rk=1.0, direction=1):
     dlnr = dlogr*np.log(10.0)
     n = len(tmp)
     if np.iscomplexobj(tmp):  # Returns complex128
-        y = (_fftl.drfftl(tmp.real, n, nmu, q, dlnr, kr, rk, direction) +
-             1j*_fftl.drfftl(tmp.real, n, nmu, q, dlnr, kr, rk, direction))
+        y = (_fftl.drfftl(tmp.real, n, nmu, q, dlnr, kr, rk, 1) +
+             1j*_fftl.drfftl(tmp.real, n, nmu, q, dlnr, kr, rk, 1))
     else:  # Returns float64
-        y = _fftl.drfftl(tmp, n, nmu, q, dlnr, kr, rk, direction)
+        y = _fftl.drfftl(tmp, n, nmu, q, dlnr, kr, rk, 1)
 
     return y
 

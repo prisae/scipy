@@ -36,9 +36,8 @@ GEN_CACHE(fftl_x
 
 
 void drfftl(double *inout, int n, double mu, double q, double dlnr, double kr,
-            double rk, int direction, int howmany)
+            double rk, int direction)
 {
-    int i;
     int size;
     double *ptr = inout;
     double *xsave = NULL;
@@ -54,7 +53,5 @@ void drfftl(double *inout, int n, double mu, double q, double dlnr, double kr,
     wsave = caches_fftl_w[get_cache_id_fftl_w(n)].wsave;
     xsave = caches_fftl_x[get_cache_id_fftl_x(n, mu, q, dlnr, kr, size)].xsave;
 
-    for (i = 0; i < howmany; ++i, ptr += n) {
-        F_FUNC(fftl, FFTL)(&n, ptr, &rk, &direction, wsave, xsave);
-    }
+    F_FUNC(fftl, FFTL)(&n, ptr, &rk, &direction, wsave, xsave);
 }

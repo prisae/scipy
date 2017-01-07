@@ -8,7 +8,7 @@ Examples of the usage and to test the implementation are given in the notebook
 ToDo's
 ------
 - Add tests for `fftlog`
-- Inverse example, more examples (CSEM, FFTLog-webpage example)
+- Add CSEM example
 - Replace `cdgamma` with `scipy.special.loggamma` (asked Joshua W. for help)
 
 
@@ -17,10 +17,11 @@ Notes
 - `fftlog` has not, as other implemented FFT routines, any of the following
   implementations:
     - type-specific versions (output is always a float64/complex128)
-    - axis-check and similar (arguments `axis`, `n`, `overwrite_x`, for
-      instance in `fft` or `rfft`.)
+    - axis-check and similar (arguments `axis`, `n`, `overwrite_x`, `howmany`
+      for instance in `fft` or `rfft`.)
 - Cache `fftl_w` in `src/fftlog.c` is exactly the same as cache `drfft` in
   `src/drfft.c`, and could potentially be combined.
+- I never used the inverse fftlog, and never got it to work.
 
 
 Changes to `fftlog.f`
