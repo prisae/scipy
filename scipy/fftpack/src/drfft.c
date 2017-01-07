@@ -12,10 +12,7 @@ extern void F_FUNC(dffti, DFFTI) (int *, double *);
 extern void F_FUNC(rfftf, RFFTF) (int *, float *, float *);
 extern void F_FUNC(rfftb, RFFTB) (int *, float *, float *);
 extern void F_FUNC(rffti, RFFTI) (int *, float *);
-extern void F_FUNC(fftl, FFTL) (int *, double *, double *, int *, double *,
-                                double *);
-extern void F_FUNC(fhti, FHTI) (int *, double *, double *, double *, double *,
-                                double *);
+
 
 GEN_CACHE(drfft, (int n)
 	  , double *wsave;
@@ -34,19 +31,6 @@ GEN_CACHE(rfft, (int n)
 	  F_FUNC(rffti, RFFTI) (&n, caches_rfft[id].wsave);
 	  , free(caches_rfft[id].wsave);
 	  , 10)
-
-GEN_CACHE(fftlog
-      , (int n, double mu, double q, double dlnr, double kr, int size)
-      , double *xsave; double mu; double q; double dlnr; double kr;
-      , ((caches_fftlog[i].n == n) && (caches_fftlog[i].mu == mu) &&
-         (caches_fftlog[i].q == q) && (caches_fftlog[i].dlnr == dlnr) &&
-         (caches_fftlog[i].kr == kr))
-      , caches_fftlog[id].xsave = (double *)
-        malloc(sizeof(double) * size);
-        F_FUNC(fhti, FHTI) (&n, &mu, &q, &dlnr, &kr, caches_fftlog[id].xsave);
-      , free(caches_fftlog[id].xsave);
-      , 10)
-
 
 void drfft(double *inout, int n, int direction, int howmany,
 			  int normalize)
@@ -115,29 +99,5 @@ void rfft(float *inout, int n, int direction, int howmany,
         for (i = n * howmany - 1; i >= 0; --i) {
             (*(ptr++)) *= d;
         }
-    }
-}
-
-void drfftl(double *inout, int n, double mu, double q, double dlnr, double kr,
-            double rk, int direction, int howmany)
-{
-    int i;
-    int size;
-    double *ptr = inout;
-    double *xsave = NULL;
-    double *wsave = NULL;
-
-    if ( q != 0) {
-        size = 3 * (n / 2) + 4;
-    }
-    else {
-        size = 2 * (n / 2) + 3;
-    }
-
-    wsave = caches_drfft[get_cache_id_drfft(n)].wsave;
-    xsave = caches_fftlog[get_cache_id_fftlog(n, mu, q, dlnr, kr, size)].xsave;
-
-    for (i = 0; i < howmany; ++i, ptr += n) {
-        F_FUNC(fftl, FFTL)(&n, ptr, &rk, &direction, wsave, xsave);
     }
 }

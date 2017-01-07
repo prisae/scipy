@@ -4,25 +4,25 @@ FFTLog - fftlog.py
 # Created by Dieter Werthmüller, January 2017
 from __future__ import division, print_function, absolute_import
 
-__all__ = ['fftl', 'fftlogargs']
+__all__ = ['fftlog', 'fftlogargs']
 
 import numpy
-from . import _fftpack
+from . import _fftl
 from .basic import _asfarray
 
 import atexit
-atexit.register(_fftpack.destroy_drfft_cache)
-atexit.register(_fftpack.destroy_fftlog_cache)
+atexit.register(_fftl.destroy_fftl_x_cache)
+atexit.register(_fftl.destroy_fftl_w_cache)
 del atexit
 
 
-def fftl(x, dlogr, mu=0.5, q=0.0, kr=1.0, rk=1.0, direction=1):
+def fftlog(x, dlogr, mu=0.5, q=0.0, kr=1.0, rk=1.0, direction=1):
     """Fourier transform of a logarithmically spaced periodic sequence.
 
     Fast Fourier transform of a real, discrete periodic sequence of
     logarithmically spaced points.
 
-    `fftl` computes a discrete version of the Fourier sine (if mu = 1/2) or
+    `fftlog` computes a discrete version of the Fourier sine (if mu = 1/2) or
     cosine (if mu = -1/2) transform
 
     .. math::
@@ -42,7 +42,7 @@ def fftl(x, dlogr, mu=0.5, q=0.0, kr=1.0, rk=1.0, direction=1):
 
     and applying a biased Hankel transform to a(r).
 
-    A call to `fftl` with `direction=1` followed by a call to `fftl` with
+    A call to `fftlog` with `direction=1` followed by a call to `fftlog` with
     `direction=-1` (and rk unchanged), or vice versa, leaves the array a
     unchanged.
 
@@ -100,10 +100,6 @@ def fftl(x, dlogr, mu=0.5, q=0.0, kr=1.0, rk=1.0, direction=1):
     y : real ndarray
         Transformed array Ã(k): a(j) is Ã(k_j) at k_j = k_c exp[(j-jc) dlnr].
 
-    See Also
-    --------
-    scipy.fftpack.fftlog
-
     References
     ----------
     .. [1] 'Uncorrelated modes of the non-linear power spectrum', by A. J. S.
@@ -113,8 +109,8 @@ def fftl(x, dlogr, mu=0.5, q=0.0, kr=1.0, rk=1.0, direction=1):
 
     Examples
     --------
-    >>> from scipy.fftpack import fftlogargs, fftl
-    >>> # Get fftl-arguments
+    >>> from scipy.fftpack import fftlog, fftlogargs
+    >>> # Get fftlog-arguments
     >>> n, dlogr, logrc = 4, .1, 0
     >>> q = 0
     >>> mu = 0.5
@@ -124,15 +120,15 @@ def fftl(x, dlogr, mu=0.5, q=0.0, kr=1.0, rk=1.0, direction=1):
     >>> fw = np.sqrt(np.pi/2/w)  # Frequency domain
     >>> ft = 1/np.sqrt(t)        # Time domain
     >>> # FFTLog
-    >>> fftl = fftl(fw, dlogr=dlogr, mu=0.5, q=q, kr=kr, rk=rk, direction=1)
+    >>> fftl = fftlog(fw, dlogr=dlogr, mu=0.5, q=q, kr=kr, rk=rk, direction=1)
     >>> fftl *= 2/np.pi  # Scale back
     >>> # Print result
     >>> print('Input      :', fw)
     >>> print('Analytical :', ft)
-    >>> print('fftl       :', fftl)
+    >>> print('fftlog     :', fftl)
     Input      : [ 1.48956664  1.32757767  1.18320484  1.05453243]
     Analytical : [ 1.15380264  1.02832769  0.91649802  0.81682972]
-    fftl       : [ 1.15380264  1.02832769  0.91649802  0.81682972]
+    fftlog     : [ 1.15380264  1.02832769  0.91649802  0.81682972]
 
     """
 
@@ -154,16 +150,16 @@ def fftl(x, dlogr, mu=0.5, q=0.0, kr=1.0, rk=1.0, direction=1):
                          "(%d) specified." % n)
 
     dlnr = dlogr*numpy.log(10.0)
-    y = _fftpack.drfftl(tmp, len(tmp), mu, q, dlnr, kr, rk, direction)
+    y = _fftl.drfftl(tmp, len(tmp), mu, q, dlnr, kr, rk, direction)
 
     return y
 
 
 def fftlogargs(n, dlogr=0.01, logrc=0.0, mu=0.5, q=0, kr=1, kropt=0):
-    """FFTLog input parameters (for usage with fftl).
+    """FFTLog input parameters (for usage with fftlog).
 
     Return the required input points and the corresponding output points, the
-    (adjusted) kr and the corresponding rk for `fftl`.
+    (adjusted) kr and the corresponding rk for `fftlog`.
 
     Parameters
     ----------
@@ -179,7 +175,7 @@ def fftlogargs(n, dlogr=0.01, logrc=0.0, mu=0.5, q=0, kr=1, kropt=0):
 
     mu : float, optional
         Index of J_mu in Hankel transform; mu may be any real number, positive
-        or negative. However, for `fftl` mu must be 0.5 for a sine transform,
+        or negative. However, for `fftlog` mu must be 0.5 for a sine transform,
         and -0.5 for a cosine transform. Only used if kropt is 1. Default is
         0.5.
 
@@ -239,8 +235,8 @@ def fftlogargs(n, dlogr=0.01, logrc=0.0, mu=0.5, q=0, kr=1, kropt=0):
 
     # Get low-ringing kr
     if kropt == 1:
-        kr = _fftpack.getkr(mu=mu, q=q, dlnr=dlogr*numpy.log(10.0), kr=kr,
-                            kropt=kropt)
+        kr = _fftl.getkr(mu=mu, q=q, dlnr=dlogr*numpy.log(10.0), kr=kr,
+                         kropt=kropt)
 
     # Central point log10(k_c) of periodic interval
     logkc = numpy.log10(kr) - logrc

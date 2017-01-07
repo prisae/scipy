@@ -90,7 +90,7 @@ __all__ = ['fft','ifft','fftn','ifftn','rfft','irfft',
            'fftfreq', 'rfftfreq',
            'fftshift', 'ifftshift',
            'next_fast_len',
-           'fftl', 'fftlogargs',
+           'fftlog', 'fftlogargs',
            ]
 
 from .fftpack_version import fftpack_version as __version__

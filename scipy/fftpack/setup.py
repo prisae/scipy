@@ -19,23 +19,29 @@ def configuration(parent_package='',top_path=None):
     fftpack_src = [join('src/fftpack','*.f')]
     config.add_library('fftpack', sources=fftpack_src)
 
-    fftlog_src = [join('src/fftlog', '*')]
-    config.add_library('fftlog', sources=fftlog_src)
+    fftl_src = [join('src/fftlog', '*')]
+    config.add_library('fftl', sources=fftl_src)
 
     sources = ['fftpack.pyf','src/zfft.c','src/drfft.c','src/zrfft.c',
                'src/zfftnd.c', 'src/dct.c.src', 'src/dst.c.src']
 
     config.add_extension('_fftpack',
         sources=sources,
-        libraries=['dfftpack', 'fftpack', 'fftlog'],
+        libraries=['dfftpack', 'fftpack'],
         include_dirs=['src'],
-        depends=(dfftpack_src + fftpack_src + fftlog_src))
+        depends=(dfftpack_src + fftpack_src))
 
     config.add_extension('convolve',
         sources=['convolve.pyf','src/convolve.c'],
         libraries=['dfftpack'],
         depends=dfftpack_src,
     )
+
+    config.add_extension('_fftl',
+        sources=['fftl.pyf', 'src/fftlog.c', 'src/drfft.c'],
+        libraries=['dfftpack', 'fftpack', 'fftl'],
+        depends=fftl_src)
+
     return config
 
 if __name__ == '__main__':
