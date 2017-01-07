@@ -7,9 +7,9 @@ __usage__ = """
 Build fftpack:
   python setup.py install
 Run tests if scipy is installed:
-  python -c 'from scipy import fftpack; fftpack.test(<level>)'
+  python -c 'from scipy import fftpack; fftpack.test()'
 Run tests if fftpack is not installed:
-  python tests/test_helper.py [<level>]
+  python tests/test_logarithmic.py
 """
 
 from numpy.testing import (TestCase, assert_array_almost_equal,
@@ -25,7 +25,7 @@ class TestFFTLogargs(TestCase):
         # Default values in fftlogargs:
         # - dlogr : 0.01
         # - logrc : 0.0
-        # - mu : 0.5
+        # - mu : 'sine'
         # - q : 0
         # - kr : 1
         # - kropt : 0
@@ -52,12 +52,12 @@ class TestFFTLogargs(TestCase):
         assert_equal(kr, out[2])
         assert_equal(rk, out[3])
 
-        # Test 3, odd n, kr = pi, mu = -1
+        # Test 3, odd n, kr = pi, mu = 'cosine'
         inppts = [0.95499259, 0.97723722, 1., 1.02329299, 1.04712855]
         outpts = [3.00019769, 3.07008127, 3.14159265, 3.21476975, 3.28965135]
         kr = 3.141592653589793
         rk = 0.31830988618379069
-        out = fftlogargs(5, mu=-0.5, kr=pi)
+        out = fftlogargs(5, mu='cosine', kr=pi)
         assert_array_almost_equal(inppts, out[0])
         assert_array_almost_equal(outpts, out[1])
         assert_equal(kr, out[2])
