@@ -1,186 +1,262 @@
 """
-
-`pyfftlog` -- Python version of FFTLog
+Python version of the FFTLog algorithm
 ======================================
 
-This is a Python version of the FFTLog Fortran code by Andrew Hamilton:
+This is a Python version of the Fortran-FFTLog algorithm by Andrew Hamilton:
 
 Hamilton, A. J. S., 2000, Uncorrelated modes of the non-linear power spectrum:
 Monthly Notices of the Royal Astronomical Society, 312, pages 257-284; DOI:
 10.1046/j.1365-8711.2000.03071.x; Website of FFTLog:
 http://casa.colorado.edu/~ajsh/FFTLog.
 
+FFTLog computes the discrete Fast Fourier Transform or Fast Hankel Transform
+(of arbitrary real index) of a periodic logarithmic sequence.
+
 The function `scipy.special.loggamma` replaces the file `cdgamma.f` in the
 original code, and the functions `rfft` and `irfft` from `scipy.fftpack`
 replace the files `drffti.f`, `drfftf.f`, and `drfftb.f` in the original code.
 
-The original documentation has just been adjusted where necessary, and put into
-a more pythonic format (e.g. using 'Parameters' and 'Returns' in the
-documentation').
-
-***** From the original documentation *****
-
-===============================================================================
- THE FFTLog CODE
-===============================================================================
-
-FFTLog
-    computes the discrete Fast Fourier Transform or Fast Hankel Transform (of
-    arbitrary real index) of a periodic logarithmic sequence.
-
-Version of 5 July 1999.
-
-For more information about FFTLog, see http://casa.colorado.edu/~ajsh/FFTLog.
-
-Andrew J S Hamilton March 1999, email: Andrew.Hamilton@Colorado.EDU
-
-Refs: Talman J. D., 1978, J. Comp. Phys., 29, 35; Hamilton A. J. S., 2000,
-      MNRAS, 312, 257 (http://xxx.lanl.gov/abs/astro-ph/9905191)
-
-FFTLog computes a discrete version of the Hankel Transform (= Fourier-Bessel
-Transform) with a power law bias (k r)^q
-
-            infinity
-            /           q
-    ã(k) = | a(r) (k r)  J  (k r) k dr
-            /              mu
-            0
-
-            infinity
-            /           -q
-    a(r) = | ã(k) (k r)   J  (k r) r dk
-            /               mu
-            0
-
-where J_mu is the Bessel function of order mu.  The index mu may be any real
-number, positive or negative.
-
-The input array a_j is a periodic sequence of length n, uniformly
-logarithmically spaced with spacing dlnr
-    a_j = a(r_j)   at   r_j = r_c exp[(j-j_c) dlnr]
-centred about the point r_c.  The central index j_c = (n+1)/2 is 1/2 integral
-if n is even.  Similarly, the output array ã_j is a periodic sequence of length
-n, also uniformly logarithmically spaced with spacing dlnr
-    ã_j = ã(k_j)   at   k_j = k_c exp[(j-j_c) dlnr]
-centred about the point k_c.
-
-The centre points r_c and k_c of the periodic intervals may be chosen
-arbitrarily; but it would be normal to choose the product
-    kr = k_c r_c = k_j r_(n+1-j) = k_(n+1-j) r_j
-to be about 1 (or 2, or pi, to taste).
-
-The FFTLog algorithm is (see Hamilton 2000):
-1. FFT the input array a_j to obtain the Fourier coefficients c_m ;
-2. Multiply c_m by
-        u_m = (kr)^[- i 2 m pi/(n dlnr)] U_mu[q + i 2 m pi/(n dlnr)]
-    where
-        U_mu(x) = 2^x Gamma[(mu+1+x)/2] / Gamma[(mu+1-x)/2]
-    to obtain c_m u_m ;
-3. FFT c_m u_m back to obtain the discrete Hankel transform ã_j .
-
-----------------------------------------------------------------------
-The Fourier sine and cosine transforms
-
-                    infinity
-                        /
-    Ã(k) = sqrt(2/pi) | A(r) sin(k r) dr
-                        /
-                    0
-
-                    infinity
-                        /
-    Ã(k) = sqrt(2/pi) | A(r) cos(k r) dr
-                        /
-                    0
-
-may be regarded as special cases of the Hankel transform with mu = 1/2 and -1/2
-since
-
-    sqrt(2/pi) sin(x) = sqrt(x) J   (x)
-                                1/2
-
-    sqrt(2/pi) cos(x) = sqrt(x) J    (x)
-                                -1/2
-
-The Fourier transforms may be done by making the substitutions
-                q-(1/2)                      -q-(1/2)
-    A(r) = a(r) r          and   Ã(k) = ã(k) k
-
-and Hankel transforming a(r) with a power law bias (k r)^q
-
-            infinity
-            /           q
-    ã(k) = | a(r) (k r)  J    (k r) k dr
-            /              ±1/2
-            0
-
-Different choices of power law bias q lead to different discrete Fourier
-transforms of A(r), because the assumption of periodicity of a(r) = A(r)
-r^[-q+(1/2)] is different for different q.
-
-If A(r) is a power law, A(r) proportional to r^[q-(1/2)], then applying a bias
-q yields a discrete Fourier transform Ã(k) that is exactly equal to the
-continuous Fourier transform, because then a(r) is a constant, which is a
-periodic function.
-
-----------------------------------------------------------------------
-The Hankel transform
-
-            infinity
-            /
-    Ã(k) = | A(r) J  (k r) k dr
-            /       mu
-            0
-
-may be done by making the substitutions
-                q                      -q
-    A(r) = a(r) r    and   Ã(k) = ã(k) k
-
-and Hankel transforming a(r) with a power law bias (k r)^q
-
-            infinity
-            /           q
-    ã(k) = | a(r) (k r)  J  (k r) k dr
-            /              mu
-            0
-
-Different choices of power law bias q lead to different discrete Hankel
-transforms of A(r), because the assumption of periodicity of a(r) = A(r) r^-q
-is different for different q.
-
-If A(r) is a power law, A(r) proportional to r^q, then applying a bias q yields
-a discrete Hankel transform Ã(k) that is exactly equal to the continuous Hankel
-transform, because then a(r) is a constant, which is a periodic function.
-
-----------------------------------------------------------------------
-------------------------
-There are five routines:
-------------------------
-Comments in the subroutines contain further details.
-
-(1) subroutine fhti(n,mu,q,dlnr,kr,kropt,wsave,ok)
-    is an initialization routine.
-
-(2) subroutine fftlog(n,a,rk,dir,wsave)
-    computes the discrete Fourier sine or cosine transform of a logarithmically
-    spaced periodic sequence. This is a driver routine that calls fhtq.
-
-(3) subroutine fht(n,a,dir,wsave)
-    computes the discrete Hankel transform of a logarithmically spaced periodic
-    sequence.  This is a driver routine that calls fhtq.
-
-(4) subroutine fhtq(n,a,dir,wsave)
-    computes the biased discrete Hankel transform of a logarithmically spaced
-    periodic sequence.  This is the basic FFTLog routine.
-
-(5) real*8 function krgood(mu,q,dlnr,kr)
-    takes an input kr and returns the nearest low-ringing kr.  This is an
-    optional routine called by fhti.
+Permission to distribute this modified FFTLog under the BSD-3-Clause license
+has been granted (email from Andrew Hamilton to Dieter Werthmüller dated 07
+October 2016).
 
 """
+from __future__ import division, print_function, absolute_import
+
 import numpy as np
 from scipy.special import loggamma
-from scipy.fftpack import rfft, irfft
+from ._basic import rfft, irfft
+
+__all__ = ['fftlog', 'fftlogargs']
+
+
+def fftlog(x, spacing, transform='sine', bias=0.0, kr=1.0, rk=1.0):
+    """Fourier transform of a logarithmically spaced periodic sequence.
+
+    Fast Fourier transform of a real, discrete periodic sequence of
+    logarithmically spaced points.
+
+    `fftlog` computes a discrete version of the Fourier sine or cosine
+    transform
+
+    .. math::
+
+        G = \sqrt{2/\pi} \int_0^\infty F(r) \sin(kr) dr,
+
+        G = \sqrt{2/\pi} \int_0^\infty F(r) \cos(kr) dr
+
+
+    by making the substitutions
+
+    .. math::
+
+        F(r) = f(r) r^{ \mu - 1/2},
+
+        G(k) = g(k) k^{-\mu - 1/2}
+
+    and applying a biased Hankel transform to f(r);
+    mu = 1/2 for the sine and -1/2 for the cosine transform.
+
+    Parameters
+    ----------
+    x : array_like, real-valued
+        Array F(r) to transform: f(j) is F(r_j) at r_j = r_c exp[(j-jc) dlnr],
+        where jc = (n+1)/2 = central index of array.
+
+    spacing : float, optional
+        Separation between input-points (log10); may be positive or negative.
+        Default is 0.01.
+
+    transform : string, optional; {'sine', 'cosine'}
+        Transform type to use, which defines index of J_mu in Hankel transform:
+        mu is 0.5 for a sine transform and -0.5 for a cosine transform. Default
+        is 'sine' (mu=0.5).
+
+    bias : float, optional
+        Exponent of power law bias; bias may be any real number, positive or
+        negative. If in doubt, use bias = 0, for which case the Hankel transform
+        is orthogonal, i.e. self-inverse, provided also that, for n even, kr is
+        low-ringing. Non-zero bias may yield better approximations to the
+        continuous Hankel transform for some functions. Default is 0
+        (unbiased).
+
+    kr : float, optional
+        k_c r_c where c is central point of array
+        = k_j r_(n+1-j) = k_(n+1-j) r_j .
+        Normally one would choose kr to be about 1 (default) (or 2, or pi, to
+        taste). Default is 1.
+
+    rk : float, optional
+        r_c/k_c = r_j/k_j (a constant, the same constant for any j); rk is not
+        (necessarily) the same quantity as kr. rk is used only to multiply the
+        output array by sqrt(rk)^dir, so if you want to do the normalization
+        later, or you don't care about the normalization, you can set rk = 1.
+        Default is 1.
+
+    Returns
+    -------
+    y : real ndarray
+        Transformed array G(k): g(j) is G(k_j) at k_j = k_c exp[(j-jc) dlnr].
+
+    .. versionadded:: 1.?.0
+
+    References
+    ----------
+    .. [1] 'Uncorrelated modes of the non-linear power spectrum', by A. J. S.
+           Hamilton, `Monthly Notices of the Royal Astronomical Society` vol.
+           312, pp. 257-284, http://dx.doy.org/10.1046/j.1365-8711.2000.03071.x
+           (2000). Website of FFTLog: http://casa.colorado.edu/~ajsh/FFTLog.
+
+    Examples
+    --------
+    >>> from scipy.fft import fftlog, fftlogargs
+
+    Get fftlog-arguments
+
+    >>> n, spacing, center = 4, .1, 0
+    >>> bias = 0
+    >>> transform = 'sine'
+    >>> w, t, kr, rk = fftlogargs(n, spacing, center, transform, bias, 1, 1)
+    >>> rk /= 2/np.pi    # Scale
+
+    Analytical solution
+
+    >>> fw = np.sqrt(np.pi/2/w)  # Frequency domain
+    >>> ft = 1/np.sqrt(t)        # Time domain
+
+    FFTLog
+
+    >>> fftl = fftlog(fw, spacing, transform, bias, kr, rk)
+    >>> fftl *= 2/np.pi  # Scale back
+
+    Print result
+
+    >>> print('Input      :', fw)
+    Input      : [ 1.48956664  1.32757767  1.18320484  1.05453243]
+    >>> print('Analytical :', ft)
+    Analytical : [ 1.15380264  1.02832769  0.91649802  0.81682972]
+    >>> print('fftlog     :', fftl)
+    fftlog     : [ 1.15380264  1.02832769  0.91649802  0.81682972]
+
+    """
+
+    # Check that transform is {'sine', or 'cosine'}
+    if transform not in ['sine', 'cosine']:
+        raise ValueError("transform must be either 'sine' or 'cosine'.")
+    if transform == 'sine':
+        mu = 0.5
+    else:
+        mu = -0.5
+
+    tmp = _asfarray(x)
+
+    if len(tmp) < 1:
+        raise ValueError("Invalid number of FFT data points "
+                         "(%d) specified." % len(tmp))
+
+    dlnr = spacing*np.log(10.0)
+    return fftl(tmp, mu, bias, dlnr, kr, rk, 1)
+
+
+def fftlogargs(n, spacing=0.01, center=0.0, transform='sine', bias=0, kr=1,
+               kropt=False):
+    """FFTLog input parameters (for usage with fftlog).
+
+    Return the required input points and the corresponding output points, the
+    (adjusted) kr and the corresponding rk for `fftlog`.
+
+    Parameters
+    ----------
+    n : int
+        Number of samples.
+
+    spacing : float, optional
+        Separation between input-points (log10); may be positive or negative.
+        Default is 0.01.
+
+    center : float, optional
+        Central point of periodic interval (log10). Default is 0.
+
+    transform : string, optional; {'sine', 'cosine'}
+        Transform type to use, which defines index of J_mu in Hankel transform:
+        mu is 0.5 for a sine transform and -0.5 for a cosine transform. Default
+        is 'sine' (mu=0.5).
+
+    bias : float, optional
+        Exponent of power law bias; bias may be any real number, positive or
+        negative. If in doubt, use bias = 0, for which case the Hankel transform
+        is orthogonal, i.e. self-inverse, provided also that, for n even, kr is
+        low-ringing. Non-zero bias may yield better approximations to the
+        continuous Hankel transform for some functions. Only used if kropt is
+        True. Default is 0 (unbiased).
+
+    kr : float, optional
+        k_c r_c where c is central point of array
+        = k_j r_(n+1-j) = k_(n+1-j) r_j .
+        Normally one would choose kr to be about 1 (default) (or 2, or pi, to
+        taste). Default is 1.
+
+    kropt : bool, optional
+        - False to use input kr as is (default);
+        - True to change kr to nearest low-ringing value.
+
+
+    Returns
+    -------
+    inppts : ndarray
+        Array of length `n`, containing the sample input-points.
+    outpts : ndarray
+        Array of length `n`, containing the corresponding output-points.
+    kr : float
+        Low-ringing kr if kropt=True; else same as input.
+    rk : float
+        Inverse of kr, shifted if center != 0 and kr != 1.
+
+    .. versionadded:: 1.0.0
+
+    Examples
+    --------
+    >>> from scipy.fftpack import fftlogargs
+    >>> intpts, outpts, kr, rk = fftlogargs(n=4, kr=1, kropt=True)
+    >>> print('intpts :', intpts)
+    intpts : [ 0.96605088  0.98855309  1.01157945  1.03514217]
+    >>> print('outpts :', outpts)
+    outpts : [ 0.97306236  0.9957279   1.01892138  1.04265511]
+    >>> print('kr     :', kr)
+    kr     : 1.0072578812188107
+    >>> print('rk     :', rk)
+    rk     : 0.992794416054
+
+    """
+    # Check that transform is {'sine', or 'cosine'}; get mu
+    if transform not in ['sine', 'cosine']:
+        raise ValueError("transform must be either 'sine' or 'cosine'.")
+    if transform == 'sine':
+        mu = 0.5
+    else:
+        mu = -0.5
+
+    # Central index (1/2 integral if n is even)
+    nc = (n + 1)/2.0
+
+    # Input points (frequencies)
+    inppts = 10**(center + (np.arange(n)+1 - nc)*spacing)
+
+    # Get low-ringing kr
+    if kropt:
+        dlnr = spacing*np.log(10.0)
+        kr = krgood(mu=mu, q=bias, dlnr=dlnr, kr=kr)
+
+    # Central point log10(k_c) of periodic interval
+    logkc = np.log10(kr) - center
+
+    # rk = r_c/k_c
+    rk = 10**(center - logkc)
+
+    # Output points (times)
+    outpts = 10**(logkc + (np.arange(n)+1 - nc)*spacing)
+
+    return inppts, outpts, kr, rk
 
 
 def fhti(n, mu, dlnr, q=0, kr=1, kropt=0):
@@ -386,7 +462,7 @@ def fhti(n, mu, dlnr, q=0, kr=1, kropt=0):
     return kr, xsave
 
 
-def fftlog(a, xsave, rk=1, tdir=1):
+def fftl(a, xsave, rk=1, tdir=1):
     """Logarithmic fast Fourier transform FFTLog.
 
     This is a driver routine that calls fhtq.
