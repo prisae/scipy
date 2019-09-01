@@ -29,6 +29,7 @@ Fast Fourier Transforms (FFTs)
    ihfft2 - Inverse of hfft2
    hfftn - n-dimensional FFT of a Hermitian sequence
    ihfftn - Inverse of hfftn
+   fftlog - Logarithmic FFT
 
 Discrete Sin and Cosine Transforms (DST and DCT)
 ================================================
@@ -80,11 +81,13 @@ from ._helper import next_fast_len
 from ._backend import (set_backend, skip_backend, set_global_backend,
                        register_backend)
 from numpy.fft import fftfreq, rfftfreq, fftshift, ifftshift
+from ._fftlog import fftlog
 
 __all__ = [
     'fft', 'ifft', 'fft2','ifft2', 'fftn', 'ifftn',
     'rfft', 'irfft', 'rfft2', 'irfft2', 'rfftn', 'irfftn',
     'hfft', 'ihfft', 'hfft2', 'ihfft2', 'hfftn', 'ihfftn',
+    'fftlog',
     'fftfreq', 'rfftfreq', 'fftshift', 'ifftshift',
     'next_fast_len',
     'dct', 'idct', 'dst', 'idst', 'dctn', 'idctn', 'dstn', 'idstn',
